@@ -1,3 +1,61 @@
+import { PluginListenerHandle } from '@capacitor/core';
+
 export interface NFCPlugin {
-  echo(options: { value: string }): Promise<{ value: string }>;
+  /**
+   * Starts the NFC scanning session.
+   */
+  startScan(): Promise<void>;
+
+  /**
+   * Adds a listener for NFC tag detection events.
+   * @param eventName The name of the event ('nfcTag').
+   * @param listenerFunc The function to call when an NFC tag is detected.
+   */
+  addListener(
+    eventName: 'nfcTag',
+    listenerFunc: (data: NDEFMessages) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  /**
+   * Adds a listener for NFC error events.
+   * @param eventName The name of the event ('nfcError').
+   * @param listenerFunc The function to call when an NFC error occurs.
+   */
+  addListener(
+    eventName: 'nfcError',
+    listenerFunc: (error: NFCError) => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  /**
+   * Removes all listeners for the specified event.
+   * @param eventName The name of the event.
+   */
+  removeAllListeners(eventName: 'nfcTag' | 'nfcError'): Promise<void>;
+}
+
+export interface NDEFMessages {
+  messages: NDEFMessage[];
+}
+
+export interface NDEFMessage {
+  records: NDEFRecord[];
+}
+
+export interface NDEFRecord {
+  /**
+   * The type of the record.
+   */
+  type: string;
+
+  /**
+   * The payload of the record.
+   */
+  payload: string;
+}
+
+export interface NFCError {
+  /**
+   * The error message.
+   */
+  error: string;
 }
