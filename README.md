@@ -5,7 +5,8 @@ A Capacitor plugin for reading and writing NFC tags on iOS devices. This plugin 
 - Read NDEF messages from NFC tags.
 - Write NDEF messages to NFC tags.
 
-**Note**: NFC functionality is only available on compatible iOS devices running iOS 11.0 or later.
+**Note**: NFC functionality is only available on compatible iOS devices running iOS 13.0 or later. Android NFC functionality is still
+in development
 
 ## Table of Contents
 
