@@ -1,7 +1,7 @@
 {
-  "name": "capacitor-nfc",
-  "version": "0.0.1",
-  "description": "NFC plugin",
+  "name": "@exxili/capacitor-nfc",
+  "version": "0.0.2",
+  "description": "A Capacitor plugin for reading and writing NFC NDEFtags.",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -71,7 +71,8 @@
   },
   "capacitor": {
     "ios": {
-      "src": "ios"
+      "src": "ios",
+      "podspec": "ExxiliCapacitorNfc.podspec"
     },
     "android": {
       "src": "android"
