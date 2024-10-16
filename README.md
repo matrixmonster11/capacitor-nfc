@@ -11,6 +11,7 @@ A Capacitor plugin for reading and writing NFC tags on iOS devices. This plugin 
 
 - [Installation](#installation)
 - [iOS Setup](#ios-setup)
+- Android Setup (in Development)
 - [Usage](#usage)
   - [Reading NFC Tags](#reading-nfc-tags)
   - [Writing NFC Tags](#writing-nfc-tags)
