@@ -7,6 +7,12 @@ export interface NFCPlugin {
   startScan(): Promise<void>;
 
   /**
+   * Writes an NDEF message to an NFC tag.
+   * @param options The NDEF message to write.
+   */
+  writeNDEF(options: NDEFWriteOptions): Promise<void>;
+
+  /**
    * Adds a listener for NFC tag detection events.
    * @param eventName The name of the event ('nfcTag').
    * @param listenerFunc The function to call when an NFC tag is detected.
@@ -58,4 +64,8 @@ export interface NFCError {
    * The error message.
    */
   error: string;
+}
+
+export interface NDEFWriteOptions {
+  records: NDEFRecord[];
 }

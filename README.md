@@ -13,11 +13,12 @@ npx cap sync
 
 <docgen-index>
 
-- [`startScan()`](#startscan)
-- [`addListener('nfcTag', ...)`](#addlistenernfctag-)
-- [`addListener('nfcError', ...)`](#addlistenernfcerror-)
-- [`removeAllListeners(...)`](#removealllisteners)
-- [Interfaces](#interfaces)
+* [`startScan()`](#startscan)
+* [`writeNDEF(...)`](#writendef)
+* [`addListener('nfcTag', ...)`](#addlistenernfctag-)
+* [`addListener('nfcError', ...)`](#addlistenernfcerror-)
+* [`removeAllListeners(...)`](#removealllisteners)
+* [Interfaces](#interfaces)
 
 </docgen-index>
 
@@ -32,7 +33,23 @@ startScan() => Promise<void>
 
 Starts the NFC scanning session.
 
----
+--------------------
+
+
+### writeNDEF(...)
+
+```typescript
+writeNDEF(options: NDEFWriteOptions) => Promise<void>
+```
+
+Writes an NDEF message to an NFC tag.
+
+| Param         | Type                                                          | Description                |
+| ------------- | ------------------------------------------------------------- | -------------------------- |
+| **`options`** | <code><a href="#ndefwriteoptions">NDEFWriteOptions</a></code> | The NDEF message to write. |
+
+--------------------
+
 
 ### addListener('nfcTag', ...)
 
@@ -49,7 +66,8 @@ Adds a listener for NFC tag detection events.
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### addListener('nfcError', ...)
 
@@ -66,7 +84,8 @@ Adds a listener for NFC error events.
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt; & <a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
 
----
+--------------------
+
 
 ### removeAllListeners(...)
 
@@ -80,27 +99,18 @@ Removes all listeners for the specified event.
 | --------------- | ----------------------------------- | ---------------------- |
 | **`eventName`** | <code>'nfcTag' \| 'nfcError'</code> | The name of the event. |
 
----
+--------------------
+
 
 ### Interfaces
 
-#### PluginListenerHandle
 
-| Prop         | Type                                      |
-| ------------ | ----------------------------------------- |
-| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
-
-#### NDEFMessages
-
-| Prop           | Type                       |
-| -------------- | -------------------------- |
-| **`messages`** | <code>NDEFMessage[]</code> |
-
-#### NDEFMessage
+#### NDEFWriteOptions
 
 | Prop          | Type                      |
 | ------------- | ------------------------- |
 | **`records`** | <code>NDEFRecord[]</code> |
+
 
 #### NDEFRecord
 
@@ -108,6 +118,28 @@ Removes all listeners for the specified event.
 | ------------- | ------------------- | -------------------------- |
 | **`type`**    | <code>string</code> | The type of the record.    |
 | **`payload`** | <code>string</code> | The payload of the record. |
+
+
+#### PluginListenerHandle
+
+| Prop         | Type                                      |
+| ------------ | ----------------------------------------- |
+| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
+
+
+#### NDEFMessages
+
+| Prop           | Type                       |
+| -------------- | -------------------------- |
+| **`messages`** | <code>NDEFMessage[]</code> |
+
+
+#### NDEFMessage
+
+| Prop          | Type                      |
+| ------------- | ------------------------- |
+| **`records`** | <code>NDEFRecord[]</code> |
+
 
 #### NFCError
 
