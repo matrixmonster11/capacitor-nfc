@@ -23,6 +23,16 @@ export interface NFCPlugin {
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
+   * Adds a listener for NFC tag write events.
+   * @param eventName The name of the event ('nfcWriteSuccess').
+   * @param listenerFunc The function to call when an NFC tag is written.
+   */
+  addListener(
+    eventName: 'nfcWriteSuccess',
+    listenerFunc: () => void,
+  ): Promise<PluginListenerHandle> & PluginListenerHandle;
+
+  /**
    * Adds a listener for NFC error events.
    * @param eventName The name of the event ('nfcError').
    * @param listenerFunc The function to call when an NFC error occurs.
