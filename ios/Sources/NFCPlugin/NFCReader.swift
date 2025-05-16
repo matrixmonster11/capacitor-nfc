@@ -80,6 +80,7 @@ import CoreNFC
                     }
                     
                     if let message = message {
+                        print("NDEF message read: \(message)")
                         statusMessage = "Found 1 NDEF message."
                         session.alertMessage = statusMessage
                         session.invalidate()
