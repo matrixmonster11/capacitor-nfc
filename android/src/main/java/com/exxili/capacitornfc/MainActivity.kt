@@ -1,12 +1,11 @@
-package com.exxili.capacitornfc;
+package com.exxili.capacitornfc
 
-import android.os.Bundle;
-import com.getcapacitor.BridgeActivity;
+import android.os.Bundle
+import com.getcapacitor.BridgeActivity
 
-public class MainActivity  extends BridgeActivity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(NFCPlugin.class);
-        super.onCreate(savedInstanceState);
+class MainActivity : BridgeActivity() {
+    public override fun onCreate(savedInstanceState: Bundle?) {
+        registerPlugin(NFCPlugin::class.java)
+        super.onCreate(savedInstanceState)
     }
 }

@@ -8,7 +8,7 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "NFC"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "startScan", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "writeNDEF", returnType: CAPPluginReturnPromise)
+    d    CAPPluginMethod(name: "writeNDEF", returnType: CAPPluginReturnPromise)
     ]
 
     private let reader = NFCReader()
