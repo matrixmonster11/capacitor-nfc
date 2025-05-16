@@ -6,17 +6,20 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-@CapacitorPlugin(name = "NFC")
+@CapacitorPlugin(name = "ScreenOrientation")
 public class NFCPlugin extends Plugin {
+    public String identifier = "NFCPlugin";
+    public String jsName = "NFC";
 
-    private NFC implementation = new NFC();
-
-    @PluginMethod
-    public void echo(PluginCall call) {
-        String value = call.getString("value");
-
+    @PluginMethod()
+    public void startScan(PluginCall call) {
         JSObject ret = new JSObject();
-        ret.put("value", implementation.echo(value));
+        ret.put("error", "Android NFC scanning does not require 'startScan' method.");
         call.resolve(ret);
+    }
+
+    @PluginMethod()
+    public void writeNDEF(PluginCall call) {
+        call.resolve();
     }
 }
