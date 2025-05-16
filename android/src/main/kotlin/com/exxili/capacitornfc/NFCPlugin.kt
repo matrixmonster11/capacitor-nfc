@@ -6,7 +6,7 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 
-@CapacitorPlugin(name = "NFCPlugin")
+@CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
     var identifier: String = "NFCPlugin"
     var jsName: String = "NFC"
