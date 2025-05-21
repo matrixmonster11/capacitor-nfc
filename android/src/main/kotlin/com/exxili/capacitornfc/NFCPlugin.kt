@@ -3,7 +3,6 @@ package com.exxili.capacitornfc
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
-import android.nfc.NfcAdapter
 import android.nfc.NdefMessage
 import android.nfc.NfcAdapter.*
 import android.nfc.tech.IsoDep
