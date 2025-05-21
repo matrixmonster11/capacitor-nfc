@@ -8,10 +8,11 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import java.io.Serializable
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
-    override fun handleOnNewIntent(intent: Intent?) {
+    fun newIntent(intent: Intent?) {
         super.handleOnNewIntent(intent)
 
         if (intent?.action.isNullOrBlank()) {
@@ -19,15 +20,17 @@ class NFCPlugin : Plugin() {
         }
 
         if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent?.action) {
+            val jsResponse = JSObject()
+
             val ndefMessages: MutableList<Map<String, Any>> = mutableListOf()
             intent.getParcelableArrayExtra(null, NfcAdapter.EXTRA_NDEF_MESSAGES.javaClass)?.also { rawMessages ->
                 for(message in rawMessages.map { it as NdefMessage }) {
-                    val ndefRecords: MutableList<Map<String, Any>> = mutableListOf()
+                    val ndefRecords: MutableList<Map<String, Serializable?>> = mutableListOf()
                     for(record in message.records) {
-                        ndefRecords.add(mapOf(
-                           "type" to "TEXT",
-                           "payload" to record.payload
-                        ))
+                        mapOf(
+                            "type" to record.type?.toHexString(),
+                            "payload" to record.payload
+                        ).let { ndefRecords.add(it) }
                     }
 
                     ndefMessages.add(mapOf(
@@ -36,7 +39,6 @@ class NFCPlugin : Plugin() {
                 }
             }
 
-            val jsResponse = JSObject()
             jsResponse.put("messages", ndefMessages)
             this.notifyListeners("nfcTag", jsResponse)
         }
@@ -52,5 +54,9 @@ class NFCPlugin : Plugin() {
     fun writeNDEF(call: PluginCall) {
         print("writeNDEF called")
         call.resolve()
+    }
+
+    private fun ByteArray.toHexString(): String {
+        return joinToString(separator = "") { byte -> "%02x".format(byte) }
     }
 }
