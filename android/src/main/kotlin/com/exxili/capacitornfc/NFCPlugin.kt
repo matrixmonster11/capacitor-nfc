@@ -1,6 +1,7 @@
 package com.exxili.capacitornfc
 
 import android.content.Intent
+import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import android.nfc.NdefMessage
 import com.getcapacitor.JSObject
@@ -12,6 +13,25 @@ import java.io.Serializable
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
+    private var intent: Intent? = null
+    private var ndefFilter: IntentFilter? = null
+
+    override fun load() {
+        super.load()
+
+        intent = Intent(this.activity, javaClass).apply {
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+
+        ndefFilter = IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED).apply {
+            try {
+                addDataType("text/plain")
+            } catch (e: IntentFilter.MalformedMimeTypeException) {
+                throw RuntimeException("fail", e)
+            }
+        }
+    }
+
     override fun handleOnNewIntent(intent: Intent?) {
         super.handleOnNewIntent(intent)
 
