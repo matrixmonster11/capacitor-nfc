@@ -12,7 +12,7 @@ import java.io.Serializable
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
-    fun newIntent(intent: Intent?) {
+    override fun handleOnNewIntent(intent: Intent?) {
         super.handleOnNewIntent(intent)
 
         if (intent?.action.isNullOrBlank()) {
