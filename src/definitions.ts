@@ -77,5 +77,5 @@ export interface NFCError {
 }
 
 export interface NDEFWriteOptions {
-  records: NDEFRecord[];
+  records: (Omit<NDEFRecord, "payload"> & { payload: string })[];
 }
