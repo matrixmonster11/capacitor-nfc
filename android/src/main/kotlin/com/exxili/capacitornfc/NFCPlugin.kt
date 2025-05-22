@@ -7,6 +7,7 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED
+import android.nfc.NfcAdapter.ACTION_TAG_DISCOVERED
 import android.nfc.NfcAdapter.ACTION_TECH_DISCOVERED
 import android.nfc.NfcAdapter.EXTRA_NDEF_MESSAGES
 import android.nfc.NfcAdapter.getDefaultAdapter
@@ -28,9 +29,11 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.io.UnsupportedEncodingException
+import java.nio.charset.Charset
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
@@ -111,7 +114,8 @@ class NFCPlugin : Plugin() {
                         throw RuntimeException("failed", e)
                     }
                 },
-                IntentFilter(ACTION_TECH_DISCOVERED)
+                IntentFilter(ACTION_TECH_DISCOVERED),
+                IntentFilter(ACTION_TAG_DISCOVERED)
             )
 
         getDefaultAdapter(this.activity).enableForegroundDispatch(
@@ -132,7 +136,7 @@ class NFCPlugin : Plugin() {
             try {
                 for (record in records) {
                     Log.d("NFC", "RECORD: $record")
-                    val payload: String? = record.getString("payload")
+                    val payload: JSONArray? = record.getJSONArray("payload")
                     val type: String? = record.getString("type")
 
                     if (payload == null || type == null) {
@@ -147,7 +151,13 @@ class NFCPlugin : Plugin() {
                     }
 
                     val typeBytes = type.toByteArray(Charsets.UTF_8)
-                    val payloadBytes = payload.toByteArray(Charsets.UTF_8)
+                    val size = payload.length()
+                    val payloadBytes = ByteArray(size)
+
+                    for (i in 0 until size) {
+                        val intValue = payload.getInt(i)
+                        payloadBytes[i] = intValue.toByte()
+                    }
 
                     when (type) {
                         "T" -> {
@@ -159,10 +169,6 @@ class NFCPlugin : Plugin() {
                                     payloadBytes
                                 )
                             )
-                        }
-
-                        "U" -> {
-                            ndefRecords.add(NdefRecord.createUri(payload))
                         }
 
                         else -> {
@@ -180,17 +186,45 @@ class NFCPlugin : Plugin() {
 
                 val ndefMessage = NdefMessage(ndefRecords.toTypedArray())
                 val tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
-                val ndef = Ndef.get(tag)
+                var ndef = Ndef.get(tag)
 
                 if (ndef == null) {
-                    notifyListeners(
-                        "nfcError",
-                        JSObject().put(
-                            "error",
-                            "Tag does not support NDEF writing or is not NDEF formatted."
+                    val formatable = NdefFormatable.get(tag)
+                    if (formatable != null) {
+                        try {
+                            formatable.connect()
+                            val mimeRecord = NdefRecord.createMime("text/plain", "INIT".toByteArray(
+                                Charset.forName("US-ASCII")))
+                            val msg = NdefMessage(mimeRecord)
+                            formatable.format(msg)
+                            // Success!
+                            // Emit event to Capacitor plugin for success
+                            println("Successfully formatted and wrote NDEF message to tag!")
+                        } catch (e: IOException) {
+                            // Error connecting or formatting
+                            // Emit event to Capacitor plugin for error
+                            println("Error formatting or writing to NDEF-formatable tag: ${e.message}")
+                        } catch (e: Exception) { // Catch other potential exceptions during format, like TagLostException
+                            println("Error during NDEF formatting: ${e.message}")
+                        } finally {
+                            try {
+                                formatable.close()
+                            } catch (e: IOException) {
+                                println("Error closing NdefFormatable connection: ${e.message}")
+                            }
+                        }
+
+                        ndef = Ndef.get(formatable.tag)
+                    } else {
+                        notifyListeners(
+                            "nfcError",
+                            JSObject().put(
+                                "error",
+                                "Tag does not support NDEF writing."
+                            )
                         )
-                    )
-                    return
+                        return
+                    }
                 }
 
                 ndef.use { // Use block ensures ndef.close() is called

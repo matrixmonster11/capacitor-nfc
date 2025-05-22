@@ -1,6 +1,6 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
-export interface NFCPlugin {
+export interface NFCPluginBasic {
   /**
    * Starts the NFC scanning session.
    */
@@ -77,5 +77,18 @@ export interface NFCError {
 }
 
 export interface NDEFWriteOptions {
+  records: NDEFRecord[];
+}
+export interface NDEFWriteStringOptions {
   records: (Omit<NDEFRecord, "payload"> & { payload: string })[];
+}
+export interface NDEFWriteUint8ArrayOptions {
+  records: (Omit<NDEFRecord, "payload"> & { payload: Uint8Array })[];
+}
+
+export interface NFCPlugin extends NFCPluginBasic {
+  writeNDEFU8Array: (options: NDEFWriteUint8ArrayOptions) => Promise<void>;
+  writeNDEFStr: (options: NDEFWriteStringOptions) => Promise<void>;
+  getUint8ArrayPayload: (record?: NDEFRecord) => Uint8Array;
+  getStrPayload: (record?: NDEFRecord) => string;
 }
