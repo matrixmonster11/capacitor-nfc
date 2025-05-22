@@ -171,7 +171,9 @@ NFC.startScan()
 
 #### `writeNDEF(options: NDEFWriteOptions)`
 
-Writes an NDEF message to an NFC tag.
+Writes an NDEF message to an NFC tag. 
+
+Android use: since Android has no default UI for reading and writing NFC tags, it is recommended that you add a UI indicator to your application when calling `writeNDEF` and remove it in the `nfcWriteSuccess` listener callback and the `nfcError` listener callback. This will prevent accidental writes to tags that your users intended to read from.
 
 **Parameters**:
 
