@@ -19,6 +19,10 @@ A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. 
   - [Methods](#methods)
     - [`startScan()`](#startscan)
     - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptions)
+    - [`writeNDEFStr(options)`](#writendefstroptions-ndefwriteoptions-string)
+    - [`writeNDEFUint8Array(options)`](#writendefuint8arrayoptions-ndefwriteoptions-uint8array)
+    - [`getUint8ArrayPayload(record)`]()
+    - [`getStrPayload(record)`]()
   - [Listeners](#listeners)
     - [`addListener('nfcTag', listener)`](#addlistenernfctag-listener-data-ndefmessages--void)
     - [`addListener('nfcError', listener)`](#addlistenernfcerror-listener-error-nfcerror--void)
@@ -29,9 +33,6 @@ A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. 
     - [`NDEFMessage`](#ndefmessage)
     - [`NDEFRecord`](#ndefrecord)
     - [`NFCError`](#nfcerror)
-  - [Helper Functions](#helper-functions)
-    - [`u8payload`](#u8payload-record-ndefrecord-uint8array)
-    - [`strPayload`](#strPayload-record?-ndefrecord-string)
 - [Integration into a Capacitor App](#integration-into-a-capacitor-app)
 - [Example](#example)
 - [License](#license)
@@ -115,7 +116,7 @@ const nfcErrorListener = NFC.addListener('nfcError', (error: NFCError) => {
 
 ### Writing NFC Tags
 
-To write NDEF messages to NFC tags, use the `writeNDEF` method and listen for `nfcWriteSuccess` events.
+To write NDEF messages to NFC tags, use the `writeNDEF`, `writeNDEFStr`, or `writeNDEFUint8Array` method and listen for `nfcWriteSuccess` events.
 
 ```typescript
 import { NFC, NDEFWriteOptions, NFCError } from '@exxili/capacitor-nfc';
@@ -177,7 +178,7 @@ Android use: since Android has no default UI for reading and writing NFC tags, i
 
 **Parameters**:
 
-- `options: NDEFWriteOptions` - The NDEF message to write.
+- `options: NDEFWriteOptions<number[]>` - The NDEF message to write.
 
 **Returns**: `Promise<void>`
 
@@ -190,6 +191,46 @@ NFC.writeNDEF(options)
     console.error('Error writing NDEF message:', error);
   });
 ```
+
+#### `writeNDEFStr(options: NDEFWriteOptions<string>)`
+
+See [`writeNDEF`](#writendefoptions-ndefwriteoptions); this method allows you to provide your `NDEFRecord` as a string.
+
+**Parameters**:
+
+- `options: NDEFWriteOptions<string>` - The NDEF message to write.
+
+**Returns**: `Promise<void>`
+
+#### `writeNDEF(options: NDEFWriteOptions<Uint8Array>)`
+
+See [`writeNDEF`](#writendefoptions-ndefwriteoptions); this method allows you to provide your `NDEFRecord` as a `Uint8Array`.
+
+**Parameters**:
+
+- `options: NDEFWriteOptions` - The NDEF message to write.
+
+**Returns**: `Promise<void>`
+
+#### `getUint8ArrayPayload(record: NDEFRecord)`
+
+Converts the `number[]` payload of an NDEF record to a `Uint8Array`.
+
+**Parameters**:
+
+- `record: NDEFRecord<number[]>` - The NDEF record to convert.
+
+**Returns**: `Uint8Array`
+
+#### `getStrPayload(record: NDEFRecord)`
+
+Converts the `number[]` payload of an NDEF record to a string.
+
+**Parameters**:
+
+- `record: NDEFRecord<number[]>` - The NDEF record to convert.
+
+**Returns**: `string`
 
 ### Listeners
 
@@ -251,8 +292,8 @@ const nfcWriteSuccessListener = NFC.addListener('nfcWriteSuccess', () => {
 Options for writing an NDEF message.
 
 ```typescript
-interface NDEFWriteOptions {
-  records: NDEFRecord[];
+interface NDEFWriteOptions<T = number[]> {
+  records: NDEFRecord<T>[];
 }
 ```
 
@@ -278,10 +319,10 @@ interface NDEFMessage {
 
 #### `NDEFRecord`
 
-An NDEF record. `payload` is an array of bytes representing the data. There are helper functions to process `payload` as a `Uint8Array` or `string` as needed.
+An NDEF record. `payload` is, by default, an array of bytes representing the data; this is how an `NDEFRecord` is read from an NFC tag. You can choose to provide an `NDEFRecord` as a string using [`writeNDEFStr`](#writendefstr) or as a `Uint8Array` using [`writeNDEFUint8Array`](#writendefuint8array); these functions will convert the data to a `number[]` before writing the tag.
 
 ```typescript
-interface NDEFRecord {
+interface NDEFRecord<T = number[]> {
   /**
    * The type of the record.
    */
@@ -290,7 +331,7 @@ interface NDEFRecord {
   /**
    * The payload of the record.
    */
-  payload: number[];
+  payload: T;
 }
 ```
 
@@ -306,16 +347,6 @@ interface NFCError {
   error: string;
 }
 ```
-
-### Helper Functions
-
-#### `u8payload(record?: NDEFRecord): Uint8Array`
-
-Converts the `payload` of an NDEF record to a `Uint8Array`.
-
-#### `strPayload(record?: NDEFRecord): string`
-
-Converts the `payload` of an NDEF record to a `string`.
 
 ## Integration into a Capacitor App
 
@@ -343,14 +374,16 @@ Here's a complete example of how to read and write NFC tags in your app:
 ```typescript
 import { NFC, NDEFMessages, NDEFWriteOptions, NFCError } from '@exxili/capacitor-nfc';
 
-// Start NFC scanning
+// Start NFC scanning -- iOS only
 NFC.startScan().catch((error) => {
   console.error('Error starting NFC scan:', error);
 });
 
 // Listen for NFC tag detection
 const nfcTagListener = NFC.addListener('nfcTag', (data: NDEFMessages) => {
-  console.log('Received NFC tag:', data);
+  console.log('Received NFC tag:', data); // prints number[]
+  console.log('Received NFC tag:', NFC.p data); // prints number[]
+  console.log('Received NFC tag:', data); // prints number[]
 });
 
 // Handle NFC errors

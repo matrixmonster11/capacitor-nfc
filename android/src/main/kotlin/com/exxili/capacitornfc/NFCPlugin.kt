@@ -135,8 +135,7 @@ class NFCPlugin : Plugin() {
 
             try {
                 for (record in records) {
-                    Log.d("NFC", "RECORD: $record")
-                    val payload: JSONArray? = record.getJSONArray("payload")
+                    val payload: String? = record.getString("payload")
                     val type: String? = record.getString("type")
 
                     if (payload == null || type == null) {
@@ -151,37 +150,16 @@ class NFCPlugin : Plugin() {
                     }
 
                     val typeBytes = type.toByteArray(Charsets.UTF_8)
-                    val size = payload.length()
-                    val payloadBytes = ByteArray(size)
+                    val payloadBytes = payload.toByteArray(Charsets.UTF_8)
 
-                    for (i in 0 until size) {
-                        val intValue = payload.getInt(i)
-                        payloadBytes[i] = intValue.toByte()
-                    }
-
-                    when (type) {
-                        "T" -> {
-                            ndefRecords.add(
-                                NdefRecord(
-                                    NdefRecord.TNF_WELL_KNOWN,
-                                    typeBytes,
-                                    ByteArray(0),
-                                    payloadBytes
-                                )
-                            )
-                        }
-
-                        else -> {
-                            ndefRecords.add(
-                                NdefRecord(
-                                    NdefRecord.TNF_UNKNOWN,
-                                    typeBytes,
-                                    ByteArray(0),
-                                    payloadBytes
-                                )
-                            )
-                        }
-                    }
+                    ndefRecords.add(
+                        NdefRecord(
+                            NdefRecord.TNF_WELL_KNOWN,
+                            typeBytes,
+                            ByteArray(0),
+                            payloadBytes
+                        )
+                    )
                 }
 
                 val ndefMessage = NdefMessage(ndefRecords.toTypedArray())

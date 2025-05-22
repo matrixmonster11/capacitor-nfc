@@ -67,13 +67,11 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
         var ndefRecords = [NFCNDEFPayload]()
         for recordData in recordsData {
             guard let type = recordData["type"] as? String,
-                  let payload = recordData["payload"] as? [UInt8],
-                  let typeData = type.data(using: .utf8)
-            else {
+                let payload = recordData["payload"] as? String,
+                let typeData = type.data(using: .utf8),
+                let payloadData = payload.data(using: .utf8) else {
                 continue
             }
-            
-            let payloadData = Data(payload)
 
             let ndefRecord = NFCNDEFPayload(
                 format: .nfcWellKnown,

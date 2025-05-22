@@ -57,7 +57,7 @@ export interface NDEFMessage {
   records: NDEFRecord[];
 }
 
-export interface NDEFRecord {
+export interface NDEFRecord<T = number[]> {
   /**
    * The type of the record.
    */
@@ -66,7 +66,7 @@ export interface NDEFRecord {
   /**
    * The payload of the record.
    */
-  payload: number[];
+  payload: T;
 }
 
 export interface NFCError {
@@ -76,19 +76,13 @@ export interface NFCError {
   error: string;
 }
 
-export interface NDEFWriteOptions {
-  records: NDEFRecord[];
-}
-export interface NDEFWriteStringOptions {
-  records: (Omit<NDEFRecord, "payload"> & { payload: string })[];
-}
-export interface NDEFWriteUint8ArrayOptions {
-  records: (Omit<NDEFRecord, "payload"> & { payload: Uint8Array })[];
+export interface NDEFWriteOptions<T = number[]> {
+  records: NDEFRecord<T>[];
 }
 
 export interface NFCPlugin extends NFCPluginBasic {
-  writeNDEFU8Array: (options: NDEFWriteUint8ArrayOptions) => Promise<void>;
-  writeNDEFStr: (options: NDEFWriteStringOptions) => Promise<void>;
-  getUint8ArrayPayload: (record?: NDEFRecord) => Uint8Array;
-  getStrPayload: (record?: NDEFRecord) => string;
+  writeNDEFU8Array: (options: NDEFWriteOptions<Uint8Array>) => Promise<void>;
+  writeNDEFStr: (options: NDEFWriteOptions<string>) => Promise<void>;
+  getUint8ArrayPayload: (record?: NDEFRecord<number[]>) => Uint8Array;
+  getStrPayload: (record?: NDEFRecord<number[]>) => string;
 }
