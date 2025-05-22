@@ -1,4 +1,4 @@
-import { PluginListenerHandle } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 
 export interface NFCPlugin {
   /**
@@ -66,7 +66,7 @@ export interface NDEFRecord {
   /**
    * The payload of the record.
    */
-  payload: string;
+  payload: number[];
 }
 
 export interface NFCError {
