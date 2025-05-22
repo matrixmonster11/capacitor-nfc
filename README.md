@@ -1,35 +1,37 @@
 # Capacitor NFC Plugin (@exxili/capacitor-nfc)
 
-A Capacitor plugin for reading and writing NFC tags on iOS devices. This plugin allows you to:
+A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. This plugin allows you to:
 
 - Read NDEF messages from NFC tags.
 - Write NDEF messages to NFC tags.
 
-**Note**: NFC functionality is only available on compatible iOS devices running iOS 13.0 or later. Android NFC functionality is still
-in development
+**Note**: NFC functionality is only available on compatible iOS devices running iOS 13.0 or later.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [iOS Setup](#ios-setup)
-- Android Setup (in Development)
+- [Android Setup](#android-setup)
 - [Usage](#usage)
   - [Reading NFC Tags](#reading-nfc-tags)
   - [Writing NFC Tags](#writing-nfc-tags)
 - [API](#api)
   - [Methods](#methods)
     - [`startScan()`](#startscan)
-    - [`writeNDEF(options)`](#writendefoptions)
+    - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptions)
   - [Listeners](#listeners)
-    - [`addListener('nfcTag', listener)`](#addlistenernfctag-listener)
-    - [`addListener('nfcError', listener)`](#addlistenernfcerror-listener)
-    - [`addListener('nfcWriteSuccess', listener)`](#addlistenernfcwritesuccess-listener)
+    - [`addListener('nfcTag', listener)`](#addlistenernfctag-listener-data-ndefmessages--void)
+    - [`addListener('nfcError', listener)`](#addlistenernfcerror-listener-error-nfcerror--void)
+    - [`addListener('nfcWriteSuccess', listener)`](#addlistenernfcwritesuccess-listener---void)
   - [Interfaces](#interfaces)
     - [`NDEFWriteOptions`](#ndefwriteoptions)
     - [`NDEFMessages`](#ndefmessages)
     - [`NDEFMessage`](#ndefmessage)
     - [`NDEFRecord`](#ndefrecord)
     - [`NFCError`](#nfcerror)
+  - [Helper Functions](#helper-functions)
+    - [`u8payload`](#u8payload-record-ndefrecord-uint8array)
+    - [`strPayload`](#strPayload-record?-ndefrecord-string)
 - [Integration into a Capacitor App](#integration-into-a-capacitor-app)
 - [Example](#example)
 - [License](#license)
@@ -70,6 +72,15 @@ In your `Info.plist` file (usually located at `ios/App/App/Info.plist`), add:
 ```
 
 Replace the description with a message that explains why your app needs NFC access.
+
+## Android Setup
+
+Add the following to your `AndroidManifest.xml` file:
+
+```xml
+<uses-permission android:name="android.permission.NFC" />
+<uses-feature android:name="android.hardware.nfc" android:required="true" />
+```
 
 ## Usage
 
@@ -144,7 +155,7 @@ const nfcErrorListener = NFC.addListener('nfcError', (error: NFCError) => {
 
 #### `startScan()`
 
-Starts the NFC scanning session.
+Starts the NFC scanning session on ***iOS only***. Android devices are always in reading mode, so setting up the `nfcTag` listener is sufficient to handle tag reads on Android.
 
 **Returns**: `Promise<void>`
 
@@ -265,7 +276,7 @@ interface NDEFMessage {
 
 #### `NDEFRecord`
 
-An NDEF record.
+An NDEF record. `payload` is an array of bytes representing the data. There are helper functions to process `payload` as a `Uint8Array` or `string` as needed.
 
 ```typescript
 interface NDEFRecord {
@@ -277,7 +288,7 @@ interface NDEFRecord {
   /**
    * The payload of the record.
    */
-  payload: string;
+  payload: number[];
 }
 ```
 
@@ -293,6 +304,16 @@ interface NFCError {
   error: string;
 }
 ```
+
+### Helper Functions
+
+#### `u8payload(record?: NDEFRecord): Uint8Array`
+
+Converts the `payload` of an NDEF record to a `Uint8Array`.
+
+#### `strPayload(record?: NDEFRecord): string`
+
+Converts the `payload` of an NDEF record to a `string`.
 
 ## Integration into a Capacitor App
 
@@ -362,7 +383,7 @@ const nfcWriteSuccessListener = NFC.addListener('nfcWriteSuccess', () => {
 
 ## License
 
-[MIT License](LICENSE)
+[MIT License](https://opensource.org/license/mit)
 
 ---
 
