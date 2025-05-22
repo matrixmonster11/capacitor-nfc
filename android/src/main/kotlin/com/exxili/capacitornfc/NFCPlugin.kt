@@ -146,9 +146,19 @@ class NFCPlugin : Plugin() {
                         return
                     }
 
+                    val typeBytes = type.toByteArray(Charsets.UTF_8)
+                    val payloadBytes = payload.toByteArray(Charsets.UTF_8)
+
                     when (type) {
                         "T" -> {
-                            ndefRecords.add(NdefRecord.createTextRecord("en", payload))
+                            ndefRecords.add(
+                                NdefRecord(
+                                    NdefRecord.TNF_WELL_KNOWN,
+                                    typeBytes,
+                                    ByteArray(0),
+                                    payloadBytes
+                                )
+                            )
                         }
 
                         "U" -> {
@@ -156,8 +166,6 @@ class NFCPlugin : Plugin() {
                         }
 
                         else -> {
-                            val typeBytes = type.toByteArray(Charsets.UTF_8)
-                            val payloadBytes = payload.toByteArray(Charsets.UTF_8)
                             ndefRecords.add(
                                 NdefRecord(
                                     NdefRecord.TNF_UNKNOWN,
