@@ -4,7 +4,9 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
 import android.nfc.NdefMessage
-import android.nfc.NfcAdapter.*
+import android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED
+import android.nfc.NfcAdapter.EXTRA_NDEF_MESSAGES
+import android.nfc.NfcAdapter.getDefaultAdapter
 import android.nfc.tech.IsoDep
 import android.nfc.tech.MifareClassic
 import android.nfc.tech.MifareUltralight
@@ -15,13 +17,15 @@ import android.nfc.tech.NfcB
 import android.nfc.tech.NfcBarcode
 import android.nfc.tech.NfcF
 import android.nfc.tech.NfcV
+import android.util.Log
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
-import com.getcapacitor.Logger
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import java.io.Serializable
+
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
@@ -39,7 +43,7 @@ class NFCPlugin : Plugin() {
     ))
 
     public override fun handleOnNewIntent(intent: Intent?) {
-        Logger.info("HANDLING INTENT INTERNAL")
+        Log.d("NFC", "HANDLING INTENT INTERNAL")
 
         super.handleOnNewIntent(intent)
 
@@ -50,23 +54,32 @@ class NFCPlugin : Plugin() {
         if (ACTION_NDEF_DISCOVERED == intent?.action) {
             val jsResponse = JSObject()
 
-            val ndefMessages: MutableList<Map<String, Any>> = mutableListOf()
-            intent.getParcelableArrayExtra(null, EXTRA_NDEF_MESSAGES.javaClass)?.also { rawMessages ->
-                for(message in rawMessages.map { it as NdefMessage }) {
-                    val ndefRecords: MutableList<Map<String, Serializable?>> = mutableListOf()
+            val ndefMessages = JSArray()
+            val receivedMessages = intent.getParcelableArrayExtra(
+                EXTRA_NDEF_MESSAGES,
+                NdefMessage::class.java
+            )
+
+           receivedMessages?.also { rawMessages ->
+                Log.d("NFC", "RAW MESSAGES $rawMessages")
+                for(message in rawMessages) {
+                    Log.d("NFC", "PAYLOAD STRING IS $message")
+                    val ndefRecords = JSArray()
                     for(record in message.records) {
-                        mapOf(
-                            "type" to record.type?.toHexString(),
-                            "payload" to record.payload
-                        ).let { ndefRecords.add(it) }
+                        val rec = JSObject()
+                        rec.put("type", record.type?.toHexString())
+                        rec.put("payload", record.payload)
+                        ndefRecords.put(rec)
+                        Log.d("NFC", "RECORDS: $ndefRecords")
                     }
 
-                    ndefMessages.add(mapOf(
-                        "records" to ndefRecords
-                    ))
+                    val msg = JSObject()
+                    msg.put("records", ndefRecords)
+                    ndefMessages.put(msg)
                 }
             }
 
+            Log.d("NFC", "RESPONSE: $jsResponse")
             jsResponse.put("messages", ndefMessages)
             this.notifyListeners("nfcTag", jsResponse)
         }
