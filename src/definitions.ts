@@ -76,13 +76,12 @@ export interface NFCError {
   error: string;
 }
 
-export interface NDEFWriteOptions<T = number[]> {
+export interface NDEFWriteOptions<T = string> {
   records: NDEFRecord<T>[];
 }
 
-export interface NFCPlugin extends NFCPluginBasic {
-  writeNDEFU8Array: (options: NDEFWriteOptions<Uint8Array>) => Promise<void>;
-  writeNDEFStr: (options: NDEFWriteOptions<string>) => Promise<void>;
-  getUint8ArrayPayload: (record?: NDEFRecord<number[]>) => Uint8Array;
-  getStrPayload: (record?: NDEFRecord<number[]>) => string;
+export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF"> {
+  writeNDEF: <T extends string | number[] | Uint8Array = string>(record?: NDEFWriteOptions<T>) => Promise<void>;
+  getUint8ArrayPayload: (record?: NDEFRecord) => Uint8Array;
+  getStrPayload: (record?: NDEFRecord) => string;
 }

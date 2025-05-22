@@ -19,8 +19,6 @@ A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. 
   - [Methods](#methods)
     - [`startScan()`](#startscan)
     - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptions)
-    - [`writeNDEFStr(options)`](#writendefstroptions-ndefwriteoptions-string)
-    - [`writeNDEFUint8Array(options)`](#writendefuint8arrayoptions-ndefwriteoptions-uint8array)
     - [`getUint8ArrayPayload(record)`]()
     - [`getStrPayload(record)`]()
   - [Listeners](#listeners)
@@ -116,7 +114,7 @@ const nfcErrorListener = NFC.addListener('nfcError', (error: NFCError) => {
 
 ### Writing NFC Tags
 
-To write NDEF messages to NFC tags, use the `writeNDEF`, `writeNDEFStr`, or `writeNDEFUint8Array` method and listen for `nfcWriteSuccess` events.
+To write NDEF messages to NFC tags, use the `writeNDEF` method and listen for `nfcWriteSuccess` events.
 
 ```typescript
 import { NFC, NDEFWriteOptions, NFCError } from '@exxili/capacitor-nfc';
@@ -170,7 +168,7 @@ NFC.startScan()
   });
 ```
 
-#### `writeNDEF(options: NDEFWriteOptions)`
+#### `writeNDEF(options: NDEFWriteOptions<T = string)`
 
 Writes an NDEF message to an NFC tag. 
 
@@ -178,7 +176,7 @@ Android use: since Android has no default UI for reading and writing NFC tags, i
 
 **Parameters**:
 
-- `options: NDEFWriteOptions<number[]>` - The NDEF message to write.
+- `options: NDEFWriteOptions<T>` - The NDEF message to write.
 
 **Returns**: `Promise<void>`
 
@@ -191,26 +189,6 @@ NFC.writeNDEF(options)
     console.error('Error writing NDEF message:', error);
   });
 ```
-
-#### `writeNDEFStr(options: NDEFWriteOptions<string>)`
-
-See [`writeNDEF`](#writendefoptions-ndefwriteoptions); this method allows you to provide your `NDEFRecord` as a string.
-
-**Parameters**:
-
-- `options: NDEFWriteOptions<string>` - The NDEF message to write.
-
-**Returns**: `Promise<void>`
-
-#### `writeNDEF(options: NDEFWriteOptions<Uint8Array>)`
-
-See [`writeNDEF`](#writendefoptions-ndefwriteoptions); this method allows you to provide your `NDEFRecord` as a `Uint8Array`.
-
-**Parameters**:
-
-- `options: NDEFWriteOptions` - The NDEF message to write.
-
-**Returns**: `Promise<void>`
 
 #### `getUint8ArrayPayload(record: NDEFRecord)`
 
@@ -292,7 +270,7 @@ const nfcWriteSuccessListener = NFC.addListener('nfcWriteSuccess', () => {
 Options for writing an NDEF message.
 
 ```typescript
-interface NDEFWriteOptions<T = number[]> {
+interface NDEFWriteOptions<T = string> {
   records: NDEFRecord<T>[];
 }
 ```

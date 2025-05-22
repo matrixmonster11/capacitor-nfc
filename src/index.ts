@@ -3,8 +3,6 @@ import { registerPlugin } from '@capacitor/core';
 import type {
   NDEFRecord,
   NDEFWriteOptions,
-  NDEFWriteStringOptions,
-  NDEFWriteUint8ArrayOptions,
   NFCPlugin,
   NFCPluginBasic
 } from './definitions';
@@ -14,33 +12,27 @@ export * from './definitions';
 
 export const NFC: NFCPlugin = {
   startScan: NFCPlug.startScan.bind(NFCPlug),
-  writeNDEF: NFCPlug.writeNDEF.bind(NFCPlug),
   addListener: NFCPlug.addListener.bind(NFCPlug),
   removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
-  async writeNDEFStr(options: NDEFWriteStringOptions): Promise<void> {
-    const ndefMessage: NDEFWriteUint8ArrayOptions = {
-      records: options.records.map(record => ({
-        type: record.type,
-        payload: new TextEncoder().encode(record.payload ?? []),
-      })),
+
+  async writeNDEF<T extends string | number[] | Uint8Array = string>(options?: NDEFWriteOptions<T>): Promise<void> {
+    const ndefMessage: NDEFWriteOptions<string> = {
+      records: options?.records.map(record => {
+        const payload: string = typeof record.payload === "string"
+          ? record.payload
+          : Array.isArray(record.payload)
+            ? (new TextDecoder()).decode(new Uint8Array(record.payload as number[]))
+            : (new TextDecoder()).decode(record.payload as Uint8Array);
+        return {
+          type: record.type,
+          payload
+        }
+      }) ?? [],
     };
 
-    console.log("WRITE MESSAGE str", ndefMessage);
-
-    await NFC.writeNDEFU8Array(ndefMessage);
+    await NFCPlug.writeNDEF(ndefMessage)
   },
-  async writeNDEFU8Array(options: NDEFWriteUint8ArrayOptions): Promise<void> {
-    const ndefMessage: NDEFWriteOptions = {
-      records: options.records.map(record => ({
-        type: record.type,
-        payload: [...record.payload.values()],
-      })),
-    };
 
-    console.log("WRITE MESSAGE u8[]", ndefMessage);
-
-    await NFCPlug.writeNDEF(ndefMessage);
-  },
   getUint8ArrayPayload(record?: NDEFRecord): Uint8Array {
     return new Uint8Array(record?.payload ?? []);
   },
