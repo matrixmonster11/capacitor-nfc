@@ -24,8 +24,6 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import java.io.Serializable
-
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
@@ -67,7 +65,7 @@ class NFCPlugin : Plugin() {
                     val ndefRecords = JSArray()
                     for(record in message.records) {
                         val rec = JSObject()
-                        rec.put("type", record.type?.toHexString())
+                        rec.put("type", record.type)
                         rec.put("payload", record.payload)
                         ndefRecords.put(rec)
                         Log.d("NFC", "RECORDS: $ndefRecords")
@@ -121,9 +119,5 @@ class NFCPlugin : Plugin() {
         })
 
         getDefaultAdapter(this.activity).enableForegroundDispatch(this.activity, pendingIntent, intentFilter, techListsArray)
-    }
-
-    private fun ByteArray.toHexString(): String {
-        return joinToString(separator = "") { byte -> "%02x".format(byte) }
     }
 }
