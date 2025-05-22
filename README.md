@@ -168,7 +168,7 @@ NFC.startScan()
   });
 ```
 
-#### `writeNDEF(options: NDEFWriteOptions<T = string)`
+#### `writeNDEF(options: NDEFWriteOptions<T extends string | number[] | Uint8Array = string)`
 
 Writes an NDEF message to an NFC tag. 
 
@@ -176,7 +176,7 @@ Android use: since Android has no default UI for reading and writing NFC tags, i
 
 **Parameters**:
 
-- `options: NDEFWriteOptions<T>` - The NDEF message to write.
+- `options: NDEFWriteOptions<T extends string | number[] | Uint8Array = string>` - The NDEF message to write.
 
 **Returns**: `Promise<void>`
 
@@ -270,7 +270,7 @@ const nfcWriteSuccessListener = NFC.addListener('nfcWriteSuccess', () => {
 Options for writing an NDEF message.
 
 ```typescript
-interface NDEFWriteOptions<T = string> {
+interface NDEFWriteOptions<T extends string | number[] | Uint8Array = string> {
   records: NDEFRecord<T>[];
 }
 ```
