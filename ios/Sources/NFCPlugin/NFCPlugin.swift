@@ -16,7 +16,7 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     private let writer = NFCWriter()
 
     @objc func isSupported(_ call: CAPPluginCall) {
-        call.resolve(["messages": NFCNDEFReaderSession.readingAvailable])
+        call.resolve(["supported": NFCNDEFReaderSession.readingAvailable])
     }
 
     @objc func startScan(_ call: CAPPluginCall) {
