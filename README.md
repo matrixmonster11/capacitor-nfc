@@ -358,6 +358,9 @@ Here's a complete example of how to read and write NFC tags in your app:
 ```typescript
 import { NFC, NDEFMessages, NDEFWriteOptions, NFCError } from '@exxili/capacitor-nfc';
 
+// Check if NFC is supported
+const { supported } = await NFC.isSupported();
+
 // Start NFC scanning -- iOS only
 NFC.startScan().catch((error) => {
   console.error('Error starting NFC scan:', error);
