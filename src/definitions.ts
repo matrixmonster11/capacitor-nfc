@@ -4,7 +4,7 @@ export interface NFCPluginBasic {
   /**
    * Checks if NFC is supported on the device. Returns true on all iOS devices, and checks for support on Android.
    */
-  isSupported(): Promise<boolean>;
+  isSupported(): Promise<{ supported: boolean }>;
 
   startScan(): Promise<void>;
 
