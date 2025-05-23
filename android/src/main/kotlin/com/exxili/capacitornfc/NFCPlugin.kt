@@ -54,8 +54,6 @@ class NFCPlugin : Plugin() {
     ))
 
     public override fun handleOnNewIntent(intent: Intent?) {
-        Log.d("NFC", "HANDLING INTENT INTERNAL")
-
         super.handleOnNewIntent(intent)
 
         if (intent == null || intent.action.isNullOrBlank()) {
@@ -135,8 +133,6 @@ class NFCPlugin : Plugin() {
     }
 
     private fun handleWriteTag(intent: Intent) {
-        Log.d("NFC", "Records $recordsBuffer")
-
         val records = recordsBuffer?.toList<JSONObject>()
         if(records != null) {
             val ndefRecords = mutableListOf<NdefRecord>()
@@ -237,7 +233,7 @@ class NFCPlugin : Plugin() {
                     }
 
                     ndef.writeNdefMessage(ndefMessage)
-                    Log.d("NFCPlugin", "NDEF message successfully written to tag.")
+                    Log.d("NFC", "NDEF message successfully written to tag.")
                 }
 
                 notifyListeners("nfcWriteSuccess", JSObject().put("success", true))
@@ -288,9 +284,7 @@ class NFCPlugin : Plugin() {
         )
 
         receivedMessages?.also { rawMessages ->
-            Log.d("NFC", "RAW MESSAGES $rawMessages")
             for (message in rawMessages) {
-                Log.d("NFC", "PAYLOAD STRING IS $message")
                 val ndefRecords = JSArray()
                 for (record in message.records) {
                     val rec = JSObject()
@@ -301,7 +295,6 @@ class NFCPlugin : Plugin() {
                         })
                     )
                     ndefRecords.put(rec)
-                    Log.d("NFC", "RECORDS: $ndefRecords")
                 }
 
                 val msg = JSObject()
@@ -310,7 +303,6 @@ class NFCPlugin : Plugin() {
             }
         }
 
-        Log.d("NFC", "RESPONSE: $jsResponse")
         jsResponse.put("messages", ndefMessages)
         this.notifyListeners("nfcTag", jsResponse)
     }
