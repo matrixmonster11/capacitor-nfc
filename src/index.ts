@@ -11,12 +11,13 @@ const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
 export * from './definitions';
 
 export const NFC: NFCPlugin = {
+  isSupported: NFCPlug.isSupported.bind(NFCPlug),
   startScan: NFCPlug.startScan.bind(NFCPlug),
   addListener: NFCPlug.addListener.bind(NFCPlug),
   removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
 
   async writeNDEF<T extends string | number[] | Uint8Array = string>(options?: NDEFWriteOptions<T>): Promise<void> {
-    const ndefMessage: NDEFWriteOptions<string> = {
+    const ndefMessage: NDEFWriteOptions = {
       records: options?.records.map(record => {
         const payload: string = typeof record.payload === "string"
           ? record.payload

@@ -2,8 +2,11 @@ import type { PluginListenerHandle } from '@capacitor/core';
 
 export interface NFCPluginBasic {
   /**
-   * Starts the NFC scanning session.
+   * Checks if NFC is supported on the device. Returns true on all iOS devices, and checks for support on Android.
    */
+  isSupported(): Promise<boolean>;
+
+
   startScan(): Promise<void>;
 
   /**
