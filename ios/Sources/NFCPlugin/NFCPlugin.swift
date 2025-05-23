@@ -7,12 +7,17 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "NFCPlugin"
     public let jsName = "NFC"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "isSupported", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startScan", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "writeNDEF", returnType: CAPPluginReturnPromise)
     ]
 
     private let reader = NFCReader()
     private let writer = NFCWriter()
+
+    @objc func isSupported(_ call: CAPPluginCall) {
+        call.resolve(["messages": NFCNDEFReaderSession.readingAvailable])
+    }
 
     @objc func startScan(_ call: CAPPluginCall) {
         print("startScan called")

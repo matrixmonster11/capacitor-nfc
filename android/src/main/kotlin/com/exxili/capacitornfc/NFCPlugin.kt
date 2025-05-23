@@ -75,6 +75,14 @@ class NFCPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun isSupported(call: PluginCall) {
+        val adapter = NfcAdapter.getDefaultAdapter(this.activity)
+        val ret = JSObject()
+        ret.put("supported", adapter != null)
+        call.resolve(ret)
+    }
+
+    @PluginMethod
     fun startScan(call: PluginCall) {
         print("startScan called")
         call.reject("Android NFC scanning does not require 'startScan' method.")

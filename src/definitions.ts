@@ -6,7 +6,6 @@ export interface NFCPluginBasic {
    */
   isSupported(): Promise<boolean>;
 
-
   startScan(): Promise<void>;
 
   /**
