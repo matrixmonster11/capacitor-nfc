@@ -12,13 +12,13 @@ A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. 
 - [Installation](#installation)
 - [iOS Setup](#ios-setup)
 - [Android Setup](#android-setup)
-- [Usage](#usage)
   - [Reading NFC Tags](#reading-nfc-tags)
   - [Writing NFC Tags](#writing-nfc-tags)
 - [API](#api)
   - [Methods](#methods)
+    - [`isSupported()`](#issupported)
     - [`startScan()`](#startscan)
-    - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptions)
+    - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptionst-extends-string--number--uint8array--string)
     - [`getUint8ArrayPayload(record)`]()
     - [`getStrPayload(record)`]()
   - [Listeners](#listeners)
@@ -151,6 +151,12 @@ const nfcErrorListener = NFC.addListener('nfcError', (error: NFCError) => {
 ## API
 
 ### Methods
+
+#### `isSupported()`
+
+Returns if NFC is supported on the scanning device.
+
+**Returns**: `Promise<{ supported: boolean }>`
 
 #### `startScan()`
 
@@ -297,7 +303,7 @@ interface NDEFMessage {
 
 #### `NDEFRecord`
 
-An NDEF record. `payload` is, by default, an array of bytes representing the data; this is how an `NDEFRecord` is read from an NFC tag. You can choose to provide an `NDEFRecord` as a string using [`writeNDEFStr`](#writendefstr) or as a `Uint8Array` using [`writeNDEFUint8Array`](#writendefuint8array); these functions will convert the data to a `number[]` before writing the tag.
+An NDEF record. `payload` is, by default, an array of bytes representing the data; this is how an `NDEFRecord` is read from an NFC tag. You can choose to provide an `NDEFRecord` as a string a `Uint8Array` also.
 
 ```typescript
 interface NDEFRecord<T = number[]> {
