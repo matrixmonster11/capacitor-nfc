@@ -359,9 +359,10 @@ NFC.startScan().catch((error) => {
 
 // Listen for NFC tag detection
 const nfcTagListener = NFC.addListener('nfcTag', (data: NDEFMessages) => {
-  console.log('Received NFC tag:', data); // prints number[]
-  console.log('Received NFC tag:', NFC.p data); // prints number[]
-  console.log('Received NFC tag:', data); // prints number[]
+  const firstRecord = data.messages?.at(0)?.records?.at(0);
+  console.log('Received NFC tag:', firstRecord); // prints number[]
+  console.log('Received NFC tag:', NFC.getStrPayload(firstRecord)); // prints string
+  console.log('Received NFC tag:', NFC.getUint8ArrayPayload(firstRecord)); // prints Uint8Array
 });
 
 // Handle NFC errors
