@@ -7,12 +7,17 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "NFCPlugin"
     public let jsName = "NFC"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "isSupported", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startScan", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "writeNDEF", returnType: CAPPluginReturnPromise)
     ]
 
     private let reader = NFCReader()
     private let writer = NFCWriter()
+
+    @objc func isSupported(_ call: CAPPluginCall) {
+        call.resolve(["supported": NFCNDEFReaderSession.readingAvailable])
+    }
 
     @objc func startScan(_ call: CAPPluginCall) {
         print("startScan called")
@@ -67,9 +72,9 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
         var ndefRecords = [NFCNDEFPayload]()
         for recordData in recordsData {
             guard let type = recordData["type"] as? String,
-                  let payload = recordData["payload"] as? String,
-                  let typeData = type.data(using: .utf8),
-                  let payloadData = payload.data(using: .utf8) else {
+                let payload = recordData["payload"] as? String,
+                let typeData = type.data(using: .utf8),
+                let payloadData = payload.data(using: .utf8) else {
                 continue
             }
 
