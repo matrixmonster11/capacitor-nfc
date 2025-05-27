@@ -23,7 +23,7 @@ export interface NFCPluginBasic {
    */
   addListener(
     eventName: 'nfcTag',
-    listenerFunc: (data: NDEFMessages<Uint8Array>) => void,
+    listenerFunc: (data: NDEFMessages) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**

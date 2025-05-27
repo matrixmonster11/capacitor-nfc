@@ -11,10 +11,14 @@ export const NFC = {
         const ndefMessage = {
             records: (_a = options === null || options === void 0 ? void 0 : options.records.map(record => {
                 const payload = typeof record.payload === "string"
-                    ? record.payload
+                    ? (new TextEncoder()).encode(record.payload)
                     : Array.isArray(record.payload)
-                        ? (new TextDecoder()).decode(new Uint8Array(record.payload))
-                        : (new TextDecoder()).decode(record.payload);
+                        ? new Uint8Array(record.payload)
+                        : record.payload instanceof Uint8Array
+                            ? record.payload
+                            : null;
+                if (!payload)
+                    throw ("Unsupported payload type");
                 return {
                     type: record.type,
                     payload
@@ -23,12 +27,8 @@ export const NFC = {
         };
         await NFCPlug.writeNDEF(ndefMessage);
     },
-    getUint8ArrayPayload(record) {
-        var _a;
-        return new Uint8Array((_a = record === null || record === void 0 ? void 0 : record.payload) !== null && _a !== void 0 ? _a : []);
-    },
     getStrPayload(record) {
-        return new TextDecoder().decode(NFC.getUint8ArrayPayload(record));
+        return new TextDecoder().decode(record === null || record === void 0 ? void 0 : record.payload);
     }
 };
 //# sourceMappingURL=index.js.map
