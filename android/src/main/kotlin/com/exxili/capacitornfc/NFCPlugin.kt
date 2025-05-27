@@ -34,6 +34,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.io.UnsupportedEncodingException
 import java.nio.charset.Charset
+import java.util.Base64
 
 @CapacitorPlugin(name = "NFC")
 class NFCPlugin : Plugin() {
@@ -139,10 +140,10 @@ class NFCPlugin : Plugin() {
 
             try {
                 for (record in records) {
-                    val payload: String? = record.getString("payload")
+                    val payload = record.getJSONArray("payload")
                     val type: String? = record.getString("type")
 
-                    if (payload == null || type == null) {
+                    if (payload.length() == 0 || type == null) {
                         notifyListeners(
                             "nfcError",
                             JSObject().put(
@@ -154,7 +155,10 @@ class NFCPlugin : Plugin() {
                     }
 
                     val typeBytes = type.toByteArray(Charsets.UTF_8)
-                    val payloadBytes = payload.toByteArray(Charsets.UTF_8)
+                    val payloadBytes = ByteArray(payload.length())
+                    for(i in 0 until payload.length()) {
+                        payloadBytes[i] = payload.getInt(i).toByte()
+                    }
 
                     ndefRecords.add(
                         NdefRecord(
@@ -289,11 +293,7 @@ class NFCPlugin : Plugin() {
                 for (record in message.records) {
                     val rec = JSObject()
                     rec.put("type", String(record.type, Charsets.UTF_8))
-                    rec.put("payload", JSArray(
-                        record.payload.map { byte ->
-                            byte.toUByte().toInt()
-                        })
-                    )
+                    rec.put("payload", Base64.getEncoder().encodeToString(record.payload))
                     ndefRecords.put(rec)
                 }
 
