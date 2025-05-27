@@ -15,7 +15,7 @@ export interface NFCPluginBasic {
    * Writes an NDEF message to an NFC tag.
    * @param options The NDEF message to write.
    */
-  writeNDEF<T extends PayloadType = Uint8Array>(options: NDEFWriteOptions<T>): Promise<void>;
+  writeNDEF<T extends PayloadType = number[]>(options: NDEFWriteOptions<T>): Promise<void>;
 
   /**
    * Adds a listener for NFC tag detection events.

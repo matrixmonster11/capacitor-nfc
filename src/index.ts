@@ -24,14 +24,14 @@ export const NFC: NFCPlugin = {
   wrapperListeners: [],
 
   async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
-    const ndefMessage: NDEFWriteOptions = {
+    const ndefMessage: NDEFWriteOptions<number[]> = {
       records: options?.records.map(record => {
-        const payload: Uint8Array | null = typeof record.payload === "string"
-          ? (new TextEncoder()).encode(record.payload)
+        const payload: number[] | null = typeof record.payload === "string"
+          ? Array.from((new TextEncoder()).encode(record.payload))
           : Array.isArray(record.payload)
-            ? new Uint8Array(record.payload)
+            ? record.payload
             : record.payload instanceof Uint8Array
-              ? record.payload
+              ? Array.from(record.payload)
               : null;
 
         if(!payload) throw("Unsupported payload type")
