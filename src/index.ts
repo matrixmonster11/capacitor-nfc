@@ -13,14 +13,16 @@ import type {
 
 const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
 export * from './definitions';
-
 export const NFC: NFCPlugin = {
   isSupported: NFCPlug.isSupported.bind(NFCPlug),
   startScan: NFCPlug.startScan.bind(NFCPlug),
   onRead: (func: TagResultListenerFunc)=> NFC.wrapperListeners.push(func),
   onWrite: ()=> NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
   onError: (errFunc: (error: NFCError) => void)=> NFCPlug.addListener(`nfcError`, errFunc),
-  removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
+  removeAllListeners: (eventName: 'nfcTag' | 'nfcError')=> {
+    NFC.wrapperListeners = [];
+    return NFCPlug.removeAllListeners(eventName);
+  },
   wrapperListeners: [],
 
   async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
