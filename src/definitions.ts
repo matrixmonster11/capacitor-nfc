@@ -97,6 +97,6 @@ export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "addListen
   writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
   wrapperListeners: TagResultListenerFunc[],
   onRead: (listenerFunc: TagResultListenerFunc)=> void,
-  onWrite: (listenerFunc: ()=> Promise<void>)=> void,
+  onWrite: (listenerFunc: ()=> void)=> void,
   onError: (listenerFunc: ()=> (error: NFCError) => void)=> void,
 }
