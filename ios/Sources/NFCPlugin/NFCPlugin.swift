@@ -27,19 +27,11 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
                 var records = [[String: Any]]()
                 for record in message.records {
                     let recordType = String(data: record.type, encoding: .utf8) ?? ""
-                    var byteArray: [UInt8] = []
-                    record.payload.withUnsafeBytes { buffer in
-                        if let baseAddress = buffer.baseAddress {
-                            for i in 0..<record.payload.count {
-                                let byte = baseAddress.advanced(by: i).load(as: UInt8.self)
-                                byteArray.append(byte)
-                            }
-                        }
-                    }
+                    let payloadData = record.payload.base64EncodedString()
                     
                     records.append([
                         "type": recordType,
-                        "payload": Data(byteArray)
+                        "payload": payloadData
                     ])
                 }
                 ndefMessages.append([
