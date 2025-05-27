@@ -18,11 +18,11 @@ const NFC = {
         const ndefMessage = {
             records: (_a = options === null || options === void 0 ? void 0 : options.records.map(record => {
                 const payload = typeof record.payload === "string"
-                    ? (new TextEncoder()).encode(record.payload)
+                    ? Array.from((new TextEncoder()).encode(record.payload))
                     : Array.isArray(record.payload)
-                        ? new Uint8Array(record.payload)
+                        ? record.payload
                         : record.payload instanceof Uint8Array
-                            ? record.payload
+                            ? Array.from(record.payload)
                             : null;
                 if (!payload)
                     throw ("Unsupported payload type");
