@@ -7,7 +7,8 @@ import type {
   NFCPluginBasic,
   PayloadType,
   TagResultListenerFunc,
-  NFCError
+  NFCError,
+  NDEFMessages
 } from './definitions';
 
 const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
@@ -46,37 +47,39 @@ export const NFC: NFCPlugin = {
   }
 }
 
+type DecodeSpecifier = "b64" | "string" | "uint8Array" | "numberArray";
+type decodedType<T extends DecodeSpecifier> = NDEFMessages<T extends "b64" ? string : T extends "string" ? string : T extends "uint8Array" ? Uint8Array : number[]>
+const decodeBase64 = (base64Payload: string)=> atob(base64Payload).split('').map(char => char.charCodeAt(0));
+const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): decodedType<T> => {
+  return {
+    messages: data.messages.map(message => ({
+      records: message.records.map(record => ({
+        type: record.type,
+        payload:
+          type === "b64"
+            ? (new TextEncoder()).encode(btoa(String.fromCharCode(...record.payload)))
+            :type === "string"
+              ? decodeBase64((new TextDecoder()).decode(record.payload))
+              : type === "uint8Array"
+                ? new Uint8Array(decodeBase64((new TextDecoder()).decode(record.payload)))
+                : type === "numberArray"
+                  ? Array.from(decodeBase64((new TextDecoder()).decode(record.payload)))
+                  : record.payload
+      }))
+    }))
+  } as decodedType<T>
+}
+
 NFCPlug.addListener(`nfcTag`, data=> {
   const wrappedData: NDEFMessagesTransformable = {
     strings() {
-      return {
-        messages: data.messages.map(message => ({
-          records: message.records.map(record => ({
-            type: record.type,
-            payload: new TextDecoder().decode(record.payload as Uint8Array)
-          }))
-        }))
-      }
+      return mapPayloadTo("string", data)
     },
     uint8Arrays() {
-      return {
-        messages: data.messages.map(message => ({
-          records: message.records.map(record => ({
-            type: record.type,
-            payload: record.payload
-          }))
-        }))
-      }
+      return mapPayloadTo("uint8Array", data)
     },
     numberArrays() {
-      return {
-        messages: data.messages.map(message => ({
-          records: message.records.map(record => ({
-            type: record.type,
-            payload: Array.from(record.payload)
-          }))
-        }))
-      }
+      return mapPayloadTo("numberArray", data)
     }
   }
 
