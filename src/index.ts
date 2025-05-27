@@ -19,12 +19,12 @@ export const NFC: NFCPlugin = {
   async writeNDEF<T extends string | number[] | Uint8Array = string>(options?: NDEFWriteOptions<T>): Promise<void> {
     const ndefMessage: NDEFWriteOptions = {
       records: options?.records.map(record => {
-        const payload: string | null = typeof record.payload === "string"
-          ? record.payload
+        const payload: Uint8Array | null = typeof record.payload === "string"
+          ? (new TextEncoder()).encode(record.payload)
           : Array.isArray(record.payload)
-            ? (new TextDecoder()).decode(new Uint8Array(record.payload as number[]))
+            ? new Uint8Array(record.payload)
             : record.payload instanceof Uint8Array
-              ? (new TextDecoder()).decode(record.payload as Uint8Array)
+              ? record.payload
               : null;
 
         if(!payload) throw("Unsupported payload type")
@@ -39,10 +39,7 @@ export const NFC: NFCPlugin = {
     await NFCPlug.writeNDEF(ndefMessage)
   },
 
-  getUint8ArrayPayload(record?: NDEFRecord): Uint8Array {
-    return new Uint8Array(record?.payload ?? []);
-  },
   getStrPayload(record?: NDEFRecord): string {
-    return new TextDecoder().decode(NFC.getUint8ArrayPayload(record));
+    return new TextDecoder().decode(record?.payload);
   }
 }
