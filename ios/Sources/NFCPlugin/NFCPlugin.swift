@@ -39,7 +39,7 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
                     
                     records.append([
                         "type": recordType,
-                        "payload": byteArray
+                        "payload": Data(byteArray)
                     ])
                 }
                 ndefMessages.append([
