@@ -43,13 +43,21 @@ export const NFC: NFCPlugin = {
       }) ?? [],
     };
 
+    console.log("WRITING NDEF MESSAGE", ndefMessage);
     await NFCPlug.writeNDEF(ndefMessage)
   }
 }
 
 type DecodeSpecifier = "b64" | "string" | "uint8Array" | "numberArray";
 type decodedType<T extends DecodeSpecifier> = NDEFMessages<T extends "b64" ? string : T extends "string" ? string : T extends "uint8Array" ? Uint8Array : number[]>
-const decodeBase64 = (base64Payload: string)=> atob(base64Payload).split('').map(char => char.charCodeAt(0));
+const decodeBase64 = (base64Payload: string)=> {
+  console.log("DECODING BASE64", base64Payload, atob(base64Payload)
+    .split('')
+    .map((char) => char.charCodeAt(0)));
+  return atob(base64Payload)
+    .split('')
+    .map((char) => char.charCodeAt(0));
+}
 const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): decodedType<T> => {
   return {
     messages: data.messages.map(message => ({
@@ -57,13 +65,13 @@ const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): d
         type: record.type,
         payload:
           type === "b64"
-            ? (new TextEncoder()).encode(btoa(String.fromCharCode(...record.payload)))
+            ? record.payload
             :type === "string"
-              ? decodeBase64((new TextDecoder()).decode(record.payload))
+              ? decodeBase64(record.payload)
               : type === "uint8Array"
-                ? new Uint8Array(decodeBase64((new TextDecoder()).decode(record.payload)))
+                ? new Uint8Array(decodeBase64(record.payload))
                 : type === "numberArray"
-                  ? Array.from(decodeBase64((new TextDecoder()).decode(record.payload)))
+                  ? Array.from(decodeBase64(record.payload))
                   : record.payload
       }))
     }))
@@ -71,6 +79,7 @@ const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): d
 }
 
 NFCPlug.addListener(`nfcTag`, data=> {
+  console.log("GOT DATA", data);
   const wrappedData: NDEFMessagesTransformable = {
     strings() {
       return mapPayloadTo("string", data)
@@ -84,6 +93,7 @@ NFCPlug.addListener(`nfcTag`, data=> {
   }
 
   for(const listener of NFC.wrapperListeners) {
+    console.log("CALLING LISTENER WITH", wrappedData)
     listener(wrappedData);
   }
 })

@@ -28,29 +28,38 @@ export const NFC = {
                 };
             })) !== null && _a !== void 0 ? _a : [],
         };
+        console.log("WRITING NDEF MESSAGE", ndefMessage);
         await NFCPlug.writeNDEF(ndefMessage);
     }
 };
-const decodeBase64 = (base64Payload) => atob(base64Payload).split('').map(char => char.charCodeAt(0));
+const decodeBase64 = (base64Payload) => {
+    console.log("DECODING BASE64", base64Payload, atob(base64Payload)
+        .split('')
+        .map((char) => char.charCodeAt(0)));
+    return atob(base64Payload)
+        .split('')
+        .map((char) => char.charCodeAt(0));
+};
 const mapPayloadTo = (type, data) => {
     return {
         messages: data.messages.map(message => ({
             records: message.records.map(record => ({
                 type: record.type,
                 payload: type === "b64"
-                    ? (new TextEncoder()).encode(btoa(String.fromCharCode(...record.payload)))
+                    ? record.payload
                     : type === "string"
-                        ? decodeBase64((new TextDecoder()).decode(record.payload))
+                        ? decodeBase64(record.payload)
                         : type === "uint8Array"
-                            ? new Uint8Array(decodeBase64((new TextDecoder()).decode(record.payload)))
+                            ? new Uint8Array(decodeBase64(record.payload))
                             : type === "numberArray"
-                                ? Array.from(decodeBase64((new TextDecoder()).decode(record.payload)))
+                                ? Array.from(decodeBase64(record.payload))
                                 : record.payload
             }))
         }))
     };
 };
 NFCPlug.addListener(`nfcTag`, data => {
+    console.log("GOT DATA", data);
     const wrappedData = {
         strings() {
             return mapPayloadTo("string", data);
@@ -63,6 +72,7 @@ NFCPlug.addListener(`nfcTag`, data => {
         }
     };
     for (const listener of NFC.wrapperListeners) {
+        console.log("CALLING LISTENER WITH", wrappedData);
         listener(wrappedData);
     }
 });

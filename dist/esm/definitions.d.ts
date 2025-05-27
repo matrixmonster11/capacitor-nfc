@@ -37,13 +37,13 @@ export interface NFCPluginBasic {
      */
     removeAllListeners(eventName: 'nfcTag' | 'nfcError'): Promise<void>;
 }
-export interface NDEFMessages<T extends PayloadType = Uint8Array> {
+export interface NDEFMessages<T extends PayloadType = string> {
     messages: NDEFMessage<T>[];
 }
-export interface NDEFMessage<T extends PayloadType = Uint8Array> {
+export interface NDEFMessage<T extends PayloadType = string> {
     records: NDEFRecord<T>[];
 }
-export interface NDEFRecord<T extends PayloadType = Uint8Array> {
+export interface NDEFRecord<T extends PayloadType = string> {
     /**
      * The type of the record.
      */
@@ -63,8 +63,8 @@ export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
     records: NDEFRecord<T>[];
 }
 export declare type NDEFMessagesTransformable = {
-    uint8Arrays: () => NDEFMessages;
-    strings: () => NDEFMessages<string>;
+    uint8Arrays: () => NDEFMessages<Uint8Array>;
+    strings: () => NDEFMessages;
     numberArrays: () => NDEFMessages<number[]>;
 };
 export declare type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void;

@@ -64,11 +64,23 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
         var ndefRecords = [NFCNDEFPayload]()
         for recordData in recordsData {
             guard let type = recordData["type"] as? String,
-                let payload = recordData["payload"] as? String,
-                let typeData = type.data(using: .utf8),
-                let payloadData = payload.data(using: .utf8) else {
+                let payload = recordData["payload"] as? [NSNumber],
+                let typeData = type.data(using: .utf8)
+            else {
+                print("Skipping record due to missing or invalid record")
                 continue
             }
+            
+            guard let payloadArray = payload as [NSNumber]? else {
+                print("Skipping record due to missing or invalid 'payload' (expected array of numbers)")
+                continue
+            }
+            
+            var payloadBytes = [UInt8]()
+            for number in payloadArray {
+                payloadBytes.append(number.uint8Value)
+            }
+            let payloadData = Data(payloadBytes)
 
             let ndefRecord = NFCNDEFPayload(
                 format: .nfcWellKnown,
