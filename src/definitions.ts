@@ -23,7 +23,7 @@ export interface NFCPluginBasic {
    */
   addListener(
     eventName: 'nfcTag',
-    listenerFunc: (data: NDEFMessages<number[]>) => void,
+    listenerFunc: (data: NDEFMessages<Uint8Array>) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -86,6 +86,6 @@ export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
 }
 
 export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF"> {
-  writeNDEF: <T extends string | number[] | Uint8Array = string>(record?: NDEFWriteOptions<T>) => Promise<void>;
-  getStrPayload: (record?: NDEFRecord<Uint8Array>) => string;
+  writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
+  getStrPayload: (record?: NDEFRecord) => string;
 }

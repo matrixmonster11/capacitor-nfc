@@ -4,7 +4,7 @@ import type {
   NDEFRecord,
   NDEFWriteOptions,
   NFCPlugin,
-  NFCPluginBasic
+  NFCPluginBasic, PayloadType,
 } from './definitions';
 
 const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
@@ -16,7 +16,7 @@ export const NFC: NFCPlugin = {
   addListener: NFCPlug.addListener.bind(NFCPlug),
   removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
 
-  async writeNDEF<T extends string | number[] | Uint8Array = string>(options?: NDEFWriteOptions<T>): Promise<void> {
+  async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
     const ndefMessage: NDEFWriteOptions = {
       records: options?.records.map(record => {
         const payload: Uint8Array | null = typeof record.payload === "string"
