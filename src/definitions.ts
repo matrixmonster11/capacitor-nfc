@@ -53,11 +53,11 @@ export interface NFCPluginBasic {
   removeAllListeners(eventName: 'nfcTag' | 'nfcError'): Promise<void>;
 }
 
-export interface NDEFMessages<T extends PayloadType> {
+export interface NDEFMessages<T extends PayloadType = Uint8Array> {
   messages: NDEFMessage<T>[];
 }
 
-export interface NDEFMessage<T extends PayloadType> {
+export interface NDEFMessage<T extends PayloadType = Uint8Array> {
   records: NDEFRecord<T>[];
 }
 
