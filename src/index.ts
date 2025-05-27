@@ -83,13 +83,16 @@ const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): d
 NFCPlug.addListener(`nfcTag`, data=> {
   console.log("GOT DATA", data);
   const wrappedData: NDEFMessagesTransformable = {
-    strings() {
+    base64() {
+      return mapPayloadTo("b64", data)
+    },
+    string() {
       return mapPayloadTo("string", data)
     },
-    uint8Arrays() {
+    uint8Array() {
       return mapPayloadTo("uint8Array", data)
     },
-    numberArrays() {
+    numberArray() {
       return mapPayloadTo("numberArray", data)
     }
   }

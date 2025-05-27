@@ -87,9 +87,10 @@ export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
 }
 
 export type NDEFMessagesTransformable = {
-  uint8Arrays: ()=> NDEFMessages<Uint8Array>;
-  strings: ()=> NDEFMessages;
-  numberArrays: ()=> NDEFMessages<number[]>;
+  base64: ()=> NDEFMessages;
+  uint8Array: ()=> NDEFMessages<Uint8Array>;
+  string: ()=> NDEFMessages;
+  numberArray: ()=> NDEFMessages<number[]>;
 }
 
 export type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void
