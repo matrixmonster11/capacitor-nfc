@@ -8,8 +8,11 @@ const NFCPlug = core.registerPlugin('NFC');
 const NFC = {
     isSupported: NFCPlug.isSupported.bind(NFCPlug),
     startScan: NFCPlug.startScan.bind(NFCPlug),
-    addListener: NFCPlug.addListener.bind(NFCPlug),
+    onRead: (func) => NFC.wrapperListeners.push(func),
+    onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
+    onError: (errFunc) => NFCPlug.addListener(`nfcError`, errFunc),
     removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
+    wrapperListeners: [],
     async writeNDEF(options) {
         var _a;
         const ndefMessage = {
@@ -30,11 +33,43 @@ const NFC = {
             })) !== null && _a !== void 0 ? _a : [],
         };
         await NFCPlug.writeNDEF(ndefMessage);
-    },
-    getStrPayload(record) {
-        return new TextDecoder().decode(record === null || record === void 0 ? void 0 : record.payload);
     }
 };
+const decodeBase64 = (base64Payload) => atob(base64Payload).split('').map(char => char.charCodeAt(0));
+const mapPayloadTo = (type, data) => {
+    return {
+        messages: data.messages.map(message => ({
+            records: message.records.map(record => ({
+                type: record.type,
+                payload: type === "b64"
+                    ? (new TextEncoder()).encode(btoa(String.fromCharCode(...record.payload)))
+                    : type === "string"
+                        ? decodeBase64((new TextDecoder()).decode(record.payload))
+                        : type === "uint8Array"
+                            ? new Uint8Array(decodeBase64((new TextDecoder()).decode(record.payload)))
+                            : type === "numberArray"
+                                ? Array.from(decodeBase64((new TextDecoder()).decode(record.payload)))
+                                : record.payload
+            }))
+        }))
+    };
+};
+NFCPlug.addListener(`nfcTag`, data => {
+    const wrappedData = {
+        strings() {
+            return mapPayloadTo("string", data);
+        },
+        uint8Arrays() {
+            return mapPayloadTo("uint8Array", data);
+        },
+        numberArrays() {
+            return mapPayloadTo("numberArray", data);
+        }
+    };
+    for (const listener of NFC.wrapperListeners) {
+        listener(wrappedData);
+    }
+});
 
 exports.NFC = NFC;
 //# sourceMappingURL=plugin.cjs.js.map
