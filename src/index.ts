@@ -16,10 +16,12 @@ export * from './definitions';
 export const NFC: NFCPlugin = {
   isSupported: NFCPlug.isSupported.bind(NFCPlug),
   startScan: NFCPlug.startScan.bind(NFCPlug),
-  onRead: (func: TagResultListenerFunc)=> NFC.wrapperListeners.push(func),
-  onWrite: ()=> NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
-  onError: (errFunc: (error: NFCError) => void)=> NFCPlug.addListener(`nfcError`, errFunc),
-  removeAllListeners: (eventName: 'nfcTag' | 'nfcError')=> {
+  onRead: (func: TagResultListenerFunc) => NFC.wrapperListeners.push(func),
+  onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
+  onError: (errorFn: (error: NFCError) => void) => {
+    NFCPlug.addListener(`nfcError`, errorFn);
+  },
+  removeAllListeners: (eventName: 'nfcTag' | 'nfcError') => {
     NFC.wrapperListeners = [];
     return NFCPlug.removeAllListeners(eventName);
   },
@@ -27,28 +29,30 @@ export const NFC: NFCPlugin = {
 
   async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
     const ndefMessage: NDEFWriteOptions<number[]> = {
-      records: options?.records.map(record => {
-        const payload: number[] | null = typeof record.payload === "string"
-          ? Array.from((new TextEncoder()).encode(record.payload))
-          : Array.isArray(record.payload)
-            ? record.payload
-            : record.payload instanceof Uint8Array
-              ? Array.from(record.payload)
-              : null;
+      records:
+        options?.records.map((record) => {
+          const payload: number[] | null =
+            typeof record.payload === 'string'
+              ? Array.from(new TextEncoder().encode(record.payload))
+              : Array.isArray(record.payload)
+                ? record.payload
+                : record.payload instanceof Uint8Array
+                  ? Array.from(record.payload)
+                  : null;
 
-        if(!payload) throw("Unsupported payload type")
+          if (!payload) throw 'Unsupported payload type';
 
-        return {
-          type: record.type,
-          payload
-        }
-      }) ?? [],
+          return {
+            type: record.type,
+            payload,
+          };
+        }) ?? [],
     };
 
-    console.log("WRITING NDEF MESSAGE", ndefMessage);
-    await NFCPlug.writeNDEF(ndefMessage)
-  }
-}
+    console.log('WRITING NDEF MESSAGE', ndefMessage);
+    await NFCPlug.writeNDEF(ndefMessage);
+  },
+};
 
 type DecodeSpecifier = "b64" | "string" | "uint8Array" | "numberArray";
 type decodedType<T extends DecodeSpecifier> = NDEFMessages<T extends "b64" ? string : T extends "string" ? string : T extends "uint8Array" ? Uint8Array : number[]>
