@@ -6,31 +6,36 @@ export const NFC = {
     startScan: NFCPlug.startScan.bind(NFCPlug),
     onRead: (func) => NFC.wrapperListeners.push(func),
     onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
-    onError: (errFunc) => NFCPlug.addListener(`nfcError`, errFunc),
-    removeAllListeners: NFCPlug.removeAllListeners.bind(NFCPlug),
+    onError: (errorFn) => {
+        NFCPlug.addListener(`nfcError`, errorFn);
+    },
+    removeAllListeners: (eventName) => {
+        NFC.wrapperListeners = [];
+        return NFCPlug.removeAllListeners(eventName);
+    },
     wrapperListeners: [],
     async writeNDEF(options) {
         var _a;
         const ndefMessage = {
-            records: (_a = options === null || options === void 0 ? void 0 : options.records.map(record => {
-                const payload = typeof record.payload === "string"
-                    ? Array.from((new TextEncoder()).encode(record.payload))
+            records: (_a = options === null || options === void 0 ? void 0 : options.records.map((record) => {
+                const payload = typeof record.payload === 'string'
+                    ? Array.from(new TextEncoder().encode(record.payload))
                     : Array.isArray(record.payload)
                         ? record.payload
                         : record.payload instanceof Uint8Array
                             ? Array.from(record.payload)
                             : null;
                 if (!payload)
-                    throw ("Unsupported payload type");
+                    throw 'Unsupported payload type';
                 return {
                     type: record.type,
-                    payload
+                    payload,
                 };
             })) !== null && _a !== void 0 ? _a : [],
         };
-        console.log("WRITING NDEF MESSAGE", ndefMessage);
+        console.log('WRITING NDEF MESSAGE', ndefMessage);
         await NFCPlug.writeNDEF(ndefMessage);
-    }
+    },
 };
 const decodeBase64 = (base64Payload) => {
     console.log("DECODING BASE64", base64Payload, atob(base64Payload)
@@ -61,13 +66,16 @@ const mapPayloadTo = (type, data) => {
 NFCPlug.addListener(`nfcTag`, data => {
     console.log("GOT DATA", data);
     const wrappedData = {
-        strings() {
+        base64() {
+            return mapPayloadTo("b64", data);
+        },
+        string() {
             return mapPayloadTo("string", data);
         },
-        uint8Arrays() {
+        uint8Array() {
             return mapPayloadTo("uint8Array", data);
         },
-        numberArrays() {
+        numberArray() {
             return mapPayloadTo("numberArray", data);
         }
     };

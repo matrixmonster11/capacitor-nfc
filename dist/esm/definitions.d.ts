@@ -63,15 +63,16 @@ export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
     records: NDEFRecord<T>[];
 }
 export declare type NDEFMessagesTransformable = {
-    uint8Arrays: () => NDEFMessages<Uint8Array>;
-    strings: () => NDEFMessages;
-    numberArrays: () => NDEFMessages<number[]>;
+    base64: () => NDEFMessages;
+    uint8Array: () => NDEFMessages<Uint8Array>;
+    string: () => NDEFMessages;
+    numberArray: () => NDEFMessages<number[]>;
 };
 export declare type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void;
 export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "addListener"> {
     writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
     wrapperListeners: TagResultListenerFunc[];
     onRead: (listenerFunc: TagResultListenerFunc) => void;
-    onWrite: (listenerFunc: () => void) => void;
-    onError: (listenerFunc: () => (error: NFCError) => void) => void;
+    onWrite: (() => void);
+    onError: (errorFn: (error: NFCError) => void) => void;
 }
