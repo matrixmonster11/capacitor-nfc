@@ -19,7 +19,7 @@ export const NFC: NFCPlugin = {
   isSupported: NFCPlug.isSupported.bind(NFCPlug),
   startScan: NFCPlug.startScan.bind(NFCPlug),
   onRead: (func: TagResultListenerFunc) => NFC.wrapperListeners.push(func),
-  onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
+  onWrite: (func: ()=> void) => NFCPlug.addListener(`nfcWriteSuccess`, func),
   onError: (errorFn: (error: NFCError) => void) => {
     NFCPlug.addListener(`nfcError`, errorFn);
   },
