@@ -33,14 +33,10 @@ export const NFC = {
                 };
             })) !== null && _a !== void 0 ? _a : [],
         };
-        console.log('WRITING NDEF MESSAGE', ndefMessage);
         await NFCPlug.writeNDEF(ndefMessage);
     },
 };
 const decodeBase64 = (base64Payload) => {
-    console.log("DECODING BASE64", base64Payload, atob(base64Payload)
-        .split('')
-        .map((char) => char.charCodeAt(0)));
     return atob(base64Payload)
         .split('')
         .map((char) => char.charCodeAt(0));
@@ -64,7 +60,6 @@ const mapPayloadTo = (type, data) => {
     };
 };
 NFCPlug.addListener(`nfcTag`, data => {
-    console.log("GOT DATA", data);
     const wrappedData = {
         base64() {
             return mapPayloadTo("b64", data);
@@ -80,7 +75,6 @@ NFCPlug.addListener(`nfcTag`, data => {
         }
     };
     for (const listener of NFC.wrapperListeners) {
-        console.log("CALLING LISTENER WITH", wrappedData);
         listener(wrappedData);
     }
 });
