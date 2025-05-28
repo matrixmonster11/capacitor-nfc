@@ -27,19 +27,11 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
                 var records = [[String: Any]]()
                 for record in message.records {
                     let recordType = String(data: record.type, encoding: .utf8) ?? ""
-                    var byteArray: [UInt8] = []
-                    record.payload.withUnsafeBytes { buffer in
-                        if let baseAddress = buffer.baseAddress {
-                            for i in 0..<record.payload.count {
-                                let byte = baseAddress.advanced(by: i).load(as: UInt8.self)
-                                byteArray.append(byte)
-                            }
-                        }
-                    }
+                    let payloadData = record.payload.base64EncodedString()
                     
                     records.append([
                         "type": recordType,
-                        "payload": byteArray
+                        "payload": payloadData
                     ])
                 }
                 ndefMessages.append([
@@ -72,11 +64,23 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
         var ndefRecords = [NFCNDEFPayload]()
         for recordData in recordsData {
             guard let type = recordData["type"] as? String,
-                let payload = recordData["payload"] as? String,
-                let typeData = type.data(using: .utf8),
-                let payloadData = payload.data(using: .utf8) else {
+                let payload = recordData["payload"] as? [NSNumber],
+                let typeData = type.data(using: .utf8)
+            else {
+                print("Skipping record due to missing or invalid record")
                 continue
             }
+            
+            guard let payloadArray = payload as [NSNumber]? else {
+                print("Skipping record due to missing or invalid 'payload' (expected array of numbers)")
+                continue
+            }
+            
+            var payloadBytes = [UInt8]()
+            for number in payloadArray {
+                payloadBytes.append(number.uint8Value)
+            }
+            let payloadData = Data(payloadBytes)
 
             let ndefRecord = NFCNDEFPayload(
                 format: .nfcWellKnown,

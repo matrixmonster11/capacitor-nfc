@@ -1,5 +1,8 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
+// Payload from a new NFC scan is a base64 encoded string
+export type PayloadType = string | number[] | Uint8Array
+
 export interface NFCPluginBasic {
   /**
    * Checks if NFC is supported on the device. Returns true on all iOS devices, and checks for support on Android.
@@ -12,7 +15,7 @@ export interface NFCPluginBasic {
    * Writes an NDEF message to an NFC tag.
    * @param options The NDEF message to write.
    */
-  writeNDEF(options: NDEFWriteOptions): Promise<void>;
+  writeNDEF<T extends PayloadType = number[]>(options: NDEFWriteOptions<T>): Promise<void>;
 
   /**
    * Adds a listener for NFC tag detection events.
@@ -31,7 +34,7 @@ export interface NFCPluginBasic {
    */
   addListener(
     eventName: 'nfcWriteSuccess',
-    listenerFunc: () => void,
+    listenerFunc: ()=> void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -51,15 +54,15 @@ export interface NFCPluginBasic {
   removeAllListeners(eventName: 'nfcTag' | 'nfcError'): Promise<void>;
 }
 
-export interface NDEFMessages {
-  messages: NDEFMessage[];
+export interface NDEFMessages<T extends PayloadType = string> {
+  messages: NDEFMessage<T>[];
 }
 
-export interface NDEFMessage {
-  records: NDEFRecord[];
+export interface NDEFMessage<T extends PayloadType = string> {
+  records: NDEFRecord<T>[];
 }
 
-export interface NDEFRecord<T = number[]> {
+export interface NDEFRecord<T extends PayloadType = string> {
   /**
    * The type of the record.
    */
@@ -71,6 +74,7 @@ export interface NDEFRecord<T = number[]> {
   payload: T;
 }
 
+
 export interface NFCError {
   /**
    * The error message.
@@ -78,12 +82,23 @@ export interface NFCError {
   error: string;
 }
 
-export interface NDEFWriteOptions<T = string> {
+export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
   records: NDEFRecord<T>[];
 }
 
-export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF"> {
-  writeNDEF: <T extends string | number[] | Uint8Array = string>(record?: NDEFWriteOptions<T>) => Promise<void>;
-  getUint8ArrayPayload: (record?: NDEFRecord) => Uint8Array;
-  getStrPayload: (record?: NDEFRecord) => string;
+export type NDEFMessagesTransformable = {
+  base64: ()=> NDEFMessages;
+  uint8Array: ()=> NDEFMessages<Uint8Array>;
+  string: ()=> NDEFMessages;
+  numberArray: ()=> NDEFMessages<number[]>;
+}
+
+export type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void
+
+export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "addListener"> {
+  writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
+  wrapperListeners: TagResultListenerFunc[],
+  onRead: (listenerFunc: TagResultListenerFunc)=> void,
+  onWrite: (listenerFunc: ()=> void) => void,
+  onError: (listenerFunc: (error: NFCError)=> void)=> void,
 }
