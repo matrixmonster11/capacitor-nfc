@@ -11,7 +11,9 @@ import type {
   NDEFMessages
 } from './definitions';
 
-const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
+const NFCPlug = registerPlugin<NFCPluginBasic>('NFC', {
+  web: () => import('./web').then(m => new m.NFCWeb()),
+});
 export * from './definitions';
 export const NFC: NFCPlugin = {
   isSupported: NFCPlug.isSupported.bind(NFCPlug),
