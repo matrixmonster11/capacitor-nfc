@@ -1,5 +1,7 @@
 import { registerPlugin } from '@capacitor/core';
-const NFCPlug = registerPlugin('NFC');
+const NFCPlug = registerPlugin('NFC', {
+    web: () => import('./web').then(m => new m.NFCWeb()),
+});
 export * from './definitions';
 export const NFC = {
     isSupported: NFCPlug.isSupported.bind(NFCPlug),
