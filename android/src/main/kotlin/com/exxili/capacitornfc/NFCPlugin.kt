@@ -82,6 +82,12 @@ class NFCPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun cancelWriteAndroid(call: PluginCall) {
+        this.writeMode = false
+        call.resolve()
+    }
+
+    @PluginMethod
     fun startScan(call: PluginCall) {
         print("startScan called")
         call.reject("Android NFC scanning does not require 'startScan' method.")

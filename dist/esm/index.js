@@ -6,6 +6,7 @@ export * from './definitions';
 export const NFC = {
     isSupported: NFCPlug.isSupported.bind(NFCPlug),
     startScan: NFCPlug.startScan.bind(NFCPlug),
+    cancelWriteAndroid: NFCPlug.cancelWriteAndroid.bind(NFCPlug),
     onRead: (func) => NFC.wrapperListeners.push(func),
     onWrite: (func) => NFCPlug.addListener(`nfcWriteSuccess`, func),
     onError: (errorFn) => {
