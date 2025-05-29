@@ -13,6 +13,10 @@ export class NFCWeb extends WebPlugin implements NFCPlugin {
     return Promise.reject(new Error('NFC is not supported on web'));
   }
 
+  cancelWriteAndroid(): Promise<void> {
+    return Promise.reject(new Error('NFC is not supported on web'));
+  }
+
   writeNDEF(): Promise<void> {
     return Promise.reject(new Error('NFC is not supported on web'));
   }

@@ -6,6 +6,7 @@ export declare class NFCWeb extends WebPlugin implements NFCPlugin {
         supported: boolean;
     }>;
     startScan(): Promise<void>;
+    cancelWriteAndroid(): Promise<void>;
     writeNDEF(): Promise<void>;
     onRead(_func: TagResultListenerFunc): Promise<void>;
     onWrite(): Promise<void>;
