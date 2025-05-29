@@ -21,7 +21,7 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func cancelWriteAndroid(_ call: CAPPluginCall) {
-        call.resolve(["implementation": "Function not implemented for iOS"])
+        call.reject("Function not implemented for iOS")
     }
 
     @objc func startScan(_ call: CAPPluginCall) {
