@@ -20,6 +20,7 @@ A Capacitor plugin for reading and writing NFC tags on iOS and Android devices. 
     - [`isSupported()`](#issupported)
     - [`startScan()`](#startscan)
     - [`writeNDEF(options)`](#writendefoptions-ndefwriteoptionst-extends-string--number--uint8array--string)
+    - [`cancelWriteAndroid`](#cancelwriteandroid)
   - [Listeners](#listeners)
     - [`onRead(listener)`](#onreadlistener-data-ndefmessagestransformable--void)
     - [`onError('listener)`](#onerrorlistener-error-nfcerror--void)
@@ -197,6 +198,10 @@ NFC.writeNDEF(options)
     console.error('Error writing NDEF message:', error);
   });
 ```
+
+#### `cancelWriteAndroid()`
+
+Cancels an Android NFC write operation. Android does not have a native UI for NFC tag writing, so this method allows developers to hook up a custom UI to cancel an in-progress scan.
 
 ### Listeners
 
