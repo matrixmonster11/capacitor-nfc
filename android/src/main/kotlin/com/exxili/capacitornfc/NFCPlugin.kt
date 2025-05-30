@@ -29,7 +29,6 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.io.UnsupportedEncodingException
@@ -82,6 +81,12 @@ class NFCPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun cancelWriteAndroid(call: PluginCall) {
+        this.writeMode = false
+        call.resolve()
+    }
+
+    @PluginMethod
     fun startScan(call: PluginCall) {
         print("startScan called")
         call.reject("Android NFC scanning does not require 'startScan' method.")
@@ -99,11 +104,12 @@ class NFCPlugin : Plugin() {
 
     override fun handleOnPause() {
         super.handleOnPause()
-        getDefaultAdapter(this.activity).disableForegroundDispatch(this.activity)
+        getDefaultAdapter(this.activity)?.disableForegroundDispatch(this.activity)
     }
 
     override fun handleOnResume() {
         super.handleOnResume()
+        if(getDefaultAdapter(this.activity) == null) return;
 
         val intent = Intent(context, this.activity.javaClass).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)

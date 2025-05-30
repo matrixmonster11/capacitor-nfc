@@ -1,12 +1,15 @@
 var capacitorNFC = (function (exports, core) {
     'use strict';
 
-    const NFCPlug = core.registerPlugin('NFC');
+    const NFCPlug = core.registerPlugin('NFC', {
+        web: () => Promise.resolve().then(function () { return web; }).then(m => new m.NFCWeb()),
+    });
     const NFC = {
         isSupported: NFCPlug.isSupported.bind(NFCPlug),
         startScan: NFCPlug.startScan.bind(NFCPlug),
+        cancelWriteAndroid: NFCPlug.cancelWriteAndroid.bind(NFCPlug),
         onRead: (func) => NFC.wrapperListeners.push(func),
-        onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
+        onWrite: (func) => NFCPlug.addListener(`nfcWriteSuccess`, func),
         onError: (errorFn) => {
             NFCPlug.addListener(`nfcError`, errorFn);
         },
@@ -34,14 +37,10 @@ var capacitorNFC = (function (exports, core) {
                     };
                 })) !== null && _a !== void 0 ? _a : [],
             };
-            console.log('WRITING NDEF MESSAGE', ndefMessage);
             await NFCPlug.writeNDEF(ndefMessage);
         },
     };
     const decodeBase64 = (base64Payload) => {
-        console.log("DECODING BASE64", base64Payload, atob(base64Payload)
-            .split('')
-            .map((char) => char.charCodeAt(0)));
         return atob(base64Payload)
             .split('')
             .map((char) => char.charCodeAt(0));
@@ -65,7 +64,6 @@ var capacitorNFC = (function (exports, core) {
         };
     };
     NFCPlug.addListener(`nfcTag`, data => {
-        console.log("GOT DATA", data);
         const wrappedData = {
             base64() {
                 return mapPayloadTo("b64", data);
@@ -81,9 +79,43 @@ var capacitorNFC = (function (exports, core) {
             }
         };
         for (const listener of NFC.wrapperListeners) {
-            console.log("CALLING LISTENER WITH", wrappedData);
             listener(wrappedData);
         }
+    });
+
+    class NFCWeb extends core.WebPlugin {
+        constructor() {
+            super(...arguments);
+            this.wrapperListeners = [];
+        }
+        isSupported() {
+            return Promise.resolve({ supported: false });
+        }
+        startScan() {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        cancelWriteAndroid() {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        writeNDEF() {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        onRead(_func) {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        onWrite() {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        onError(_errorFn) {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+    }
+
+    var web = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        NFCWeb: NFCWeb
     });
 
     exports.NFC = NFC;

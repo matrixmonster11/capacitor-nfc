@@ -11,13 +11,16 @@ import type {
   NDEFMessages
 } from './definitions';
 
-const NFCPlug = registerPlugin<NFCPluginBasic>('NFC');
+const NFCPlug = registerPlugin<NFCPluginBasic>('NFC', {
+  web: () => import('./web').then(m => new m.NFCWeb()),
+});
 export * from './definitions';
 export const NFC: NFCPlugin = {
   isSupported: NFCPlug.isSupported.bind(NFCPlug),
   startScan: NFCPlug.startScan.bind(NFCPlug),
+  cancelWriteAndroid: NFCPlug.cancelWriteAndroid.bind(NFCPlug),
   onRead: (func: TagResultListenerFunc) => NFC.wrapperListeners.push(func),
-  onWrite: () => NFCPlug.addListener(`nfcWriteSuccess`, () => Promise.resolve()),
+  onWrite: (func: ()=> void) => NFCPlug.addListener(`nfcWriteSuccess`, func),
   onError: (errorFn: (error: NFCError) => void) => {
     NFCPlug.addListener(`nfcError`, errorFn);
   },
@@ -49,7 +52,6 @@ export const NFC: NFCPlugin = {
         }) ?? [],
     };
 
-    console.log('WRITING NDEF MESSAGE', ndefMessage);
     await NFCPlug.writeNDEF(ndefMessage);
   },
 };
@@ -57,9 +59,6 @@ export const NFC: NFCPlugin = {
 type DecodeSpecifier = "b64" | "string" | "uint8Array" | "numberArray";
 type decodedType<T extends DecodeSpecifier> = NDEFMessages<T extends "b64" ? string : T extends "string" ? string : T extends "uint8Array" ? Uint8Array : number[]>
 const decodeBase64 = (base64Payload: string)=> {
-  console.log("DECODING BASE64", base64Payload, atob(base64Payload)
-    .split('')
-    .map((char) => char.charCodeAt(0)));
   return atob(base64Payload)
     .split('')
     .map((char) => char.charCodeAt(0));
@@ -85,7 +84,6 @@ const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): d
 }
 
 NFCPlug.addListener(`nfcTag`, data=> {
-  console.log("GOT DATA", data);
   const wrappedData: NDEFMessagesTransformable = {
     base64() {
       return mapPayloadTo("b64", data)
@@ -102,7 +100,6 @@ NFCPlug.addListener(`nfcTag`, data=> {
   }
 
   for(const listener of NFC.wrapperListeners) {
-    console.log("CALLING LISTENER WITH", wrappedData)
     listener(wrappedData);
   }
 })

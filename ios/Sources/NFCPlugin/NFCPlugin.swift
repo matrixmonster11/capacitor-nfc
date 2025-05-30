@@ -8,6 +8,7 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "NFC"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "isSupported", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelWriteAndroid", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startScan", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "writeNDEF", returnType: CAPPluginReturnPromise)
     ]
@@ -17,6 +18,10 @@ public class NFCPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func isSupported(_ call: CAPPluginCall) {
         call.resolve(["supported": NFCNDEFReaderSession.readingAvailable])
+    }
+
+    @objc func cancelWriteAndroid(_ call: CAPPluginCall) {
+        call.reject("Function not implemented for iOS")
     }
 
     @objc func startScan(_ call: CAPPluginCall) {
