@@ -16,6 +16,9 @@ export const NFC = {
         NFC.wrapperListeners = [];
         return NFCPlug.removeAllListeners(eventName);
     },
+    lockTag: () => {
+        return NFCPlug.lockTag();
+    },
     wrapperListeners: [],
     async writeNDEF(options) {
         var _a;
@@ -62,7 +65,7 @@ const mapPayloadTo = (type, data) => {
         }))
     };
 };
-NFCPlug.addListener(`nfcTag`, data => {
+NFCPlug.addListener(`nfcTag`, (data) => {
     const wrappedData = {
         base64() {
             return mapPayloadTo("b64", data);

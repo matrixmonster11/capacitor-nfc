@@ -10,5 +10,6 @@ export declare class NFCWeb extends WebPlugin implements NFCPlugin {
     writeNDEF(): Promise<void>;
     onRead(_func: TagResultListenerFunc): Promise<void>;
     onWrite(): Promise<void>;
+    lockTag(): Promise<void>;
     onError(_errorFn: (error: any) => void): Promise<void>;
 }

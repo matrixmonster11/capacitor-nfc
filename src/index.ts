@@ -28,6 +28,9 @@ export const NFC: NFCPlugin = {
     NFC.wrapperListeners = [];
     return NFCPlug.removeAllListeners(eventName);
   },
+  lockTag: () => {
+    return NFCPlug.lockTag();
+  },
   wrapperListeners: [],
 
   async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
@@ -83,7 +86,7 @@ const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): d
   } as decodedType<T>
 }
 
-NFCPlug.addListener(`nfcTag`, data=> {
+NFCPlug.addListener(`nfcTag`, (data: any)=> {
   const wrappedData: NDEFMessagesTransformable = {
     base64() {
       return mapPayloadTo("b64", data)

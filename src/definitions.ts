@@ -23,6 +23,11 @@ export interface NFCPluginBasic {
   cancelWriteAndroid(): Promise<void>;
 
   /**
+   * Lock the tag
+   */
+  lockTag(): Promise<void>;
+
+  /**
    * Adds a listener for NFC tag detection events.
    * @param eventName The name of the event ('nfcTag').
    * @param listenerFunc The function to call when an NFC tag is detected.
@@ -100,10 +105,11 @@ export type NDEFMessagesTransformable = {
 
 export type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void
 
-export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "addListener"> {
+export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "lockTag" | "addListener"> {
   writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
   wrapperListeners: TagResultListenerFunc[],
   onRead: (listenerFunc: TagResultListenerFunc)=> void,
   onWrite: (listenerFunc: ()=> void) => void,
   onError: (listenerFunc: (error: NFCError)=> void)=> void,
+  lockTag: () => Promise<void>,
 }

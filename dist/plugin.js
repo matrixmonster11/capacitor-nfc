@@ -17,6 +17,9 @@ var capacitorNFC = (function (exports, core) {
             NFC.wrapperListeners = [];
             return NFCPlug.removeAllListeners(eventName);
         },
+        lockTag: () => {
+            return NFCPlug.lockTag();
+        },
         wrapperListeners: [],
         async writeNDEF(options) {
             var _a;
@@ -63,7 +66,7 @@ var capacitorNFC = (function (exports, core) {
             }))
         };
     };
-    NFCPlug.addListener(`nfcTag`, data => {
+    NFCPlug.addListener(`nfcTag`, (data) => {
         const wrappedData = {
             base64() {
                 return mapPayloadTo("b64", data);
@@ -105,6 +108,9 @@ var capacitorNFC = (function (exports, core) {
             return Promise.reject(new Error('NFC is not supported on web'));
         }
         onWrite() {
+            return Promise.reject(new Error('NFC is not supported on web'));
+        }
+        lockTag() {
             return Promise.reject(new Error('NFC is not supported on web'));
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
