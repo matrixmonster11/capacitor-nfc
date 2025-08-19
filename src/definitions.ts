@@ -30,7 +30,7 @@ export interface NFCPluginBasic {
   /**
    * Set to auto lock mode
    */
-  setReadAndLockMode(data: { enabled: boolean }): Promise<any>;
+  setReadAndLockMode(data: { enabled: boolean; data: string }): Promise<any>;
 
   /**
    * Executed the saved plugin call message
@@ -121,6 +121,6 @@ export interface NFCPlugin extends Omit<NFCPluginBasic, 'writeNDEF' | 'lockTag' 
   onWrite: (listenerFunc: () => void) => void;
   onError: (listenerFunc: (error: NFCError) => void) => void;
   lockTag: () => Promise<void>;
-  setReadAndLockMode: (data: { enabled: boolean }) => Promise<any>;
+  setReadAndLockMode: (data: { enabled: boolean; data: string }) => Promise<any>;
   startNfcOperation: () => Promise<any>;
 }

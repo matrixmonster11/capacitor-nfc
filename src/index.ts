@@ -31,7 +31,7 @@ export const NFC: NFCPlugin = {
   lockTag: () => {
     return NFCPlug.lockTag();
   },
-  setReadAndLockMode: (data: { enabled: boolean }) => {
+  setReadAndLockMode: (data: { enabled: boolean; data: string }) => {
     return NFCPlug.setReadAndLockMode(data);
   },
   startNfcOperation: () => {

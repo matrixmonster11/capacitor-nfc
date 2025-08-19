@@ -45,6 +45,7 @@ class NFCPlugin : Plugin() {
     private val TAG_NFC_PLUGIN = "NFCPluginDetailed" // Specific TAG for these logs
     private var autoLockOnNextReadEnabled: Boolean = false // New flag
     private var currentNfcOperationCall: PluginCall? = null // To store the call from JS
+    private var dataForAutoLock: String? = null // Add a new member variable
 
     override fun load() {
         super.load()
@@ -58,6 +59,9 @@ class NFCPlugin : Plugin() {
         val enabled = call.getBoolean("enabled", false) ?: false
         this.autoLockOnNextReadEnabled = enabled
         Log.d(TAG_NFC_PLUGIN, "setReadAndLockMode: autoLockOnNextReadEnabled set to $autoLockOnNextReadEnabled")
+        val dataString = call.getString("data") // Get the data
+        this.dataForAutoLock = dataString
+        Log.d(TAG_NFC_PLUGIN, "setReadAndLockMode: dataForAutoLock set to $dataForAutoLock")
         call.resolve(JSObject().put("success", true).put("modeSet", enabled))
     }
 
@@ -734,7 +738,9 @@ class NFCPlugin : Plugin() {
             pendingTag = tag
         }
         val tagFromPending = pendingTag // Or get tag via a new discovery flow
-        val dataToEncode = call.getString("data") // Example: get data to write from JS call
+
+        Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: dataToEncode ${this.dataForAutoLock}")
+        val dataToEncode = this.dataForAutoLock // Example: get data to write from JS call
 
         //val dataToEncode = "WETAXI_LOCK" //Test value string
 
@@ -742,6 +748,71 @@ class NFCPlugin : Plugin() {
             call.reject("No tag available.")
             return
         }
+
+        // If lock mode not provided we return the data being readed
+        if (!autoLockOnNextReadEnabled) {
+  
+
+            val jsResponse = JSObject()
+
+            val ndefMessages = JSArray()
+
+            val jsReadResponse = JSObject()
+        
+            when (intent.action) {
+                NfcAdapter.ACTION_NDEF_DISCOVERED -> {
+                    Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Action NDEF_DISCOVERED")
+                    val receivedMessages = intent.getParcelableArrayExtra(
+                        EXTRA_NDEF_MESSAGES,
+                        NdefMessage::class.java
+                    )
+
+                    receivedMessages?.also { rawMessages ->
+                    Log.d(TAG_NFC_PLUGIN, "processNfcIntent: NDEF Messages count: ${rawMessages.size}")
+                        for (message in rawMessages) {
+                            val ndefRecords = JSArray()
+                            for (record in message.records) {
+                                val rec = JSObject()
+                                // Ensure TNF and Type are handled correctly based on spec
+                                rec.put("tnf", record.tnf) // type name format
+                                rec.put("type", Base64.getEncoder().encodeToString(record.type)) // Type as Base64
+                                rec.put("id", Base64.getEncoder().encodeToString(record.id))     // ID as Base64
+                                rec.put("payload", Base64.getEncoder().encodeToString(record.payload))
+                                ndefRecords.put(rec)
+                            }
+
+                            val msg = JSObject()
+                            msg.put("records", ndefRecords)
+                            ndefMessages.put(msg)
+                        }
+                    }
+                }
+
+                NfcAdapter.ACTION_TAG_DISCOVERED, NfcAdapter.ACTION_TECH_DISCOVERED -> {
+                    Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Action TAG_DISCOVERED or TECH_DISCOVERED")
+                    val tagId = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
+                    val result = if (tagId != null) byteArrayToHexString(tagId) else ""
+                    Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Tag ID: $result")
+                    val rec = JSObject()
+                    jsResponse.put("type", "ID")
+                    jsResponse.put("payload", result)
+
+                    val ndefRecords = JSArray()
+                    ndefRecords.put(jsResponse)
+
+                    val msg = JSObject()
+                    msg.put("records", ndefRecords)
+                    ndefMessages.put(msg)
+                }
+            }
+
+            jsResponse.put("messages", ndefMessages)
+
+             Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is FALSE. Resolving with read data only.")
+            // this.notifyListeners("nfcTag", jsReadResponse) // If you still want the old event
+            call.resolve(jsReadResponse) // Resolve the PluginCall with just the read data
+        }
+
         if (dataToEncode == null) {
             call.reject("No data provided to write.")
             return
