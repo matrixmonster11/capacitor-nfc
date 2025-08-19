@@ -8,11 +8,11 @@ import type {
   PayloadType,
   TagResultListenerFunc,
   NFCError,
-  NDEFMessages
+  NDEFMessages,
 } from './definitions';
 
 const NFCPlug = registerPlugin<NFCPluginBasic>('NFC', {
-  web: () => import('./web').then(m => new m.NFCWeb()),
+  web: () => import('./web').then((m) => new m.NFCWeb()),
 });
 export * from './definitions';
 export const NFC: NFCPlugin = {
@@ -20,7 +20,7 @@ export const NFC: NFCPlugin = {
   startScan: NFCPlug.startScan.bind(NFCPlug),
   cancelWriteAndroid: NFCPlug.cancelWriteAndroid.bind(NFCPlug),
   onRead: (func: TagResultListenerFunc) => NFC.wrapperListeners.push(func),
-  onWrite: (func: ()=> void) => NFCPlug.addListener(`nfcWriteSuccess`, func),
+  onWrite: (func: () => void) => NFCPlug.addListener(`nfcWriteSuccess`, func),
   onError: (errorFn: (error: NFCError) => void) => {
     NFCPlug.addListener(`nfcError`, errorFn);
   },
@@ -31,8 +31,13 @@ export const NFC: NFCPlugin = {
   lockTag: () => {
     return NFCPlug.lockTag();
   },
+  setReadAndLockMode: (data: { enabled: boolean }) => {
+    return NFCPlug.setReadAndLockMode(data);
+  },
+  startNfcOperation: () => {
+    return NFCPlug.startNfcOperation();
+  },
   wrapperListeners: [],
-
   async writeNDEF<T extends PayloadType = Uint8Array>(options?: NDEFWriteOptions<T>): Promise<void> {
     const ndefMessage: NDEFWriteOptions<number[]> = {
       records:
@@ -59,50 +64,52 @@ export const NFC: NFCPlugin = {
   },
 };
 
-type DecodeSpecifier = "b64" | "string" | "uint8Array" | "numberArray";
-type decodedType<T extends DecodeSpecifier> = NDEFMessages<T extends "b64" ? string : T extends "string" ? string : T extends "uint8Array" ? Uint8Array : number[]>
-const decodeBase64 = (base64Payload: string)=> {
+type DecodeSpecifier = 'b64' | 'string' | 'uint8Array' | 'numberArray';
+type decodedType<T extends DecodeSpecifier> = NDEFMessages<
+  T extends 'b64' ? string : T extends 'string' ? string : T extends 'uint8Array' ? Uint8Array : number[]
+>;
+const decodeBase64 = (base64Payload: string) => {
   return atob(base64Payload)
     .split('')
     .map((char) => char.charCodeAt(0));
-}
+};
 const mapPayloadTo = <T extends DecodeSpecifier>(type: T, data: NDEFMessages): decodedType<T> => {
   return {
-    messages: data.messages.map(message => ({
-      records: message.records.map(record => ({
+    messages: data.messages.map((message) => ({
+      records: message.records.map((record) => ({
         type: record.type,
         payload:
-          type === "b64"
+          type === 'b64'
             ? record.payload
-            :type === "string"
+            : type === 'string'
               ? decodeBase64(record.payload)
-              : type === "uint8Array"
+              : type === 'uint8Array'
                 ? new Uint8Array(decodeBase64(record.payload))
-                : type === "numberArray"
+                : type === 'numberArray'
                   ? Array.from(decodeBase64(record.payload))
-                  : record.payload
-      }))
-    }))
-  } as decodedType<T>
-}
+                  : record.payload,
+      })),
+    })),
+  } as decodedType<T>;
+};
 
-NFCPlug.addListener(`nfcTag`, (data: any)=> {
+NFCPlug.addListener(`nfcTag`, (data: any) => {
   const wrappedData: NDEFMessagesTransformable = {
     base64() {
-      return mapPayloadTo("b64", data)
+      return mapPayloadTo('b64', data);
     },
     string() {
-      return mapPayloadTo("string", data)
+      return mapPayloadTo('string', data);
     },
     uint8Array() {
-      return mapPayloadTo("uint8Array", data)
+      return mapPayloadTo('uint8Array', data);
     },
     numberArray() {
-      return mapPayloadTo("numberArray", data)
-    }
-  }
+      return mapPayloadTo('numberArray', data);
+    },
+  };
 
-  for(const listener of NFC.wrapperListeners) {
+  for (const listener of NFC.wrapperListeners) {
     listener(wrappedData);
   }
-})
+});

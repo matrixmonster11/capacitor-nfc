@@ -43,6 +43,42 @@ class NFCPlugin : Plugin() {
     private var pendingTag: Tag? = null
     private val pluginScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) // Create a scope for coroutines
     private val TAG_NFC_PLUGIN = "NFCPluginDetailed" // Specific TAG for these logs
+    private var autoLockOnNextReadEnabled: Boolean = false // New flag
+    private var currentNfcOperationCall: PluginCall? = null // To store the call from JS
+
+    override fun load() {
+        super.load()
+        Log.d(TAG_NFC_PLUGIN, "NFCPlugin loaded.")
+        // You might register a broadcast receiver for NFC intents here if not handled by Capacitor's default
+    }
+
+    // Method to set the auto-lock mode from JavaScript
+    @PluginMethod
+    fun setReadAndLockMode(call: PluginCall) {
+        val enabled = call.getBoolean("enabled", false) ?: false
+        this.autoLockOnNextReadEnabled = enabled
+        Log.d(TAG_NFC_PLUGIN, "setReadAndLockMode: autoLockOnNextReadEnabled set to $autoLockOnNextReadEnabled")
+        call.resolve(JSObject().put("success", true).put("modeSet", enabled))
+    }
+
+    /**
+     * Call this method from JavaScript to initiate an NFC operation (read or read & lock).
+     * The actual processing happens when an NFC intent is received.
+     */
+    @PluginMethod
+    fun startNfcOperation(call: PluginCall) {
+        Log.d(TAG_NFC_PLUGIN, "startNfcOperation: Called. autoLockOnNextRead is $autoLockOnNextReadEnabled. Waiting for tag...")
+        if (currentNfcOperationCall != null) {
+            // Handle cases where a previous operation might not have completed
+            // Or if you only allow one operation at a time.
+            currentNfcOperationCall?.reject("Previous NFC operation still pending or not cleared.")
+            Log.w(TAG_NFC_PLUGIN, "startNfcOperation: Overwriting a previous PluginCall.")
+        }
+        currentNfcOperationCall = call
+        // Here, you would typically ensure NFC is enabled and potentially enable foreground dispatch
+        // or reader mode if your plugin manages that directly.
+        // For Capacitor, often the AndroidManifest.xml and Activity's onNewIntent handle discovery.
+    }
 
     private val techListsArray = arrayOf(arrayOf<String>(
         IsoDep::class.java.name,
@@ -246,10 +282,20 @@ class NFCPlugin : Plugin() {
 
     public override fun handleOnNewIntent(intent: Intent?) {
         super.handleOnNewIntent(intent)
-
+        Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Received intent action: ${intent?.action}")
         if (intent == null || intent.action.isNullOrBlank()) {
             return
         }
+        val call = currentNfcOperationCall // Use the stored call
+        if (call == null) {
+            Log.w(TAG_NFC_PLUGIN, "processNfcIntent: No active PluginCall to handle this NFC intent. Ignoring or just logging.")
+            // Optionally, you could still process the read and notifyListeners if that's a desired background behavior
+            // For now, let's assume an operation must be initiated via startNfcOperation.
+            // You could also just call your original handleReadTag here if you want independent notifications.
+            // handleReadTag(intent) // If you want to keep the old notification behavior too
+            return
+        }
+        currentNfcOperationCall = null // Consume the call so it's not used again for this intent
 
         if (writeMode) {
             Log.d("NFC", "WRITE MODE START")
@@ -259,7 +305,9 @@ class NFCPlugin : Plugin() {
         }
         else if (ACTION_NDEF_DISCOVERED == intent.action || ACTION_TAG_DISCOVERED == intent.action) {
             Log.d("NFC", "READ MODE START")
-             handleReadTag(intent)
+            //handleReadTag(intent,call)
+            writeAndLockTag(intent, call)
+
         }
     }
 
@@ -475,7 +523,7 @@ class NFCPlugin : Plugin() {
         }
     }
 
-    private fun handleReadTag(intent: Intent) {
+    private fun handleReadTag(intent: Intent, originalCall: PluginCall) {
         // Save the latest tag for future operations like lockTag()
         val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
         if (tag != null) {
@@ -486,19 +534,26 @@ class NFCPlugin : Plugin() {
 
         val ndefMessages = JSArray()
 
+        val jsReadResponse = JSObject()
+    
         when (intent.action) {
             NfcAdapter.ACTION_NDEF_DISCOVERED -> {
+                Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Action NDEF_DISCOVERED")
                 val receivedMessages = intent.getParcelableArrayExtra(
                     EXTRA_NDEF_MESSAGES,
                     NdefMessage::class.java
                 )
 
                 receivedMessages?.also { rawMessages ->
+                Log.d(TAG_NFC_PLUGIN, "processNfcIntent: NDEF Messages count: ${rawMessages.size}")
                     for (message in rawMessages) {
                         val ndefRecords = JSArray()
                         for (record in message.records) {
                             val rec = JSObject()
-                            rec.put("type", String(record.type, Charsets.UTF_8))
+                            // Ensure TNF and Type are handled correctly based on spec
+                            rec.put("tnf", record.tnf) // type name format
+                            rec.put("type", Base64.getEncoder().encodeToString(record.type)) // Type as Base64
+                            rec.put("id", Base64.getEncoder().encodeToString(record.id))     // ID as Base64
                             rec.put("payload", Base64.getEncoder().encodeToString(record.payload))
                             ndefRecords.put(rec)
                         }
@@ -510,16 +565,17 @@ class NFCPlugin : Plugin() {
                 }
             }
 
-            NfcAdapter.ACTION_TAG_DISCOVERED -> {
+            NfcAdapter.ACTION_TAG_DISCOVERED, NfcAdapter.ACTION_TECH_DISCOVERED -> {
+                Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Action TAG_DISCOVERED or TECH_DISCOVERED")
                 val tagId = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID)
                 val result = if (tagId != null) byteArrayToHexString(tagId) else ""
-
+                Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Tag ID: $result")
                 val rec = JSObject()
-                rec.put("type", "ID")
-                rec.put("payload", Base64.getEncoder().encodeToString(result.toByteArray()))
+                jsResponse.put("type", "ID")
+                jsResponse.put("payload", result)
 
                 val ndefRecords = JSArray()
-                ndefRecords.put(rec)
+                ndefRecords.put(jsResponse)
 
                 val msg = JSObject()
                 msg.put("records", ndefRecords)
@@ -528,8 +584,271 @@ class NFCPlugin : Plugin() {
         }
 
         jsResponse.put("messages", ndefMessages)
-        this.notifyListeners("nfcTag", jsResponse)
+        // --- End of your existing read logic ---
+
+        if (autoLockOnNextReadEnabled) {
+            Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is TRUE. Attempting lock.")
+            // Optionally reset the flag if it's a one-time auto-lock per enable
+            // this.autoLockOnNextReadEnabled = false; 
+            //performLockOperation(pendingTag, jsResponse, originalCall)
+            pendingTag?.let { nonNullTag ->
+                performLockOperation(nonNullTag, jsResponse, originalCall)
+            } ?: run {
+                Log.e(TAG_NFC_PLUGIN, "performLockOperation: pendingTag is null")
+                originalCall.reject("No tag available to lock")
+            }
+        } else {
+            Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is FALSE. Resolving with read data only.")
+            // this.notifyListeners("nfcTag", jsReadResponse) // If you still want the old event
+            originalCall.resolve(jsReadResponse) // Resolve the PluginCall with just the read data
+        }
+        
+        //this.notifyListeners("nfcTag", jsResponse)
     }
+
+    private fun performLockOperation(tagToLock: Tag, readData: JSObject, originalCall: PluginCall) {
+        Log.d(TAG_NFC_PLUGIN, "performLockOperation: Initiated for tag ID: ${tagToLock.id?.toHexString()}")
+
+        pluginScope.launch {
+            var ndefLockSuccess = false
+            var ntagLockSuccess = false
+            var lockMessage = "Locking not attempted or failed."
+
+            // --- NDEF Locking Attempt ---
+            val ndef = Ndef.get(tagToLock)
+            if (ndef != null) {
+                Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF branch started.")
+                var ndefConnected = false
+                try {
+                    val makeReadOnlyResult: Boolean? = withTimeoutOrNull(7000) {
+                        Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Calling ndef.connect().")
+                        ndef.connect()
+                        ndefConnected = true
+                        Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: ndef.connect() successful. isConnected: ${ndef.isConnected}")
+                        val isCurrentlyWritable = ndef.isWritable
+                        Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: ndef.isWritable result: $isCurrentlyWritable")
+                        if (isCurrentlyWritable) {
+                            Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Tag is writable, attempting ndef.makeReadOnly().")
+                            ndef.makeReadOnly()
+                        } else {
+                            Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Tag was already read-only.")
+                            true // Already read-only is a success for locking
+                        }
+                    }
+                    if (makeReadOnlyResult == true) {
+                        Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Generic makeReadOnly() successful or tag was already read-only.")
+                        ndefLockSuccess = true
+                        lockMessage = "Tag locked (or was already read-only) via generic NDEF command."
+                    } else if (makeReadOnlyResult == false) {
+                        Log.w(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Generic makeReadOnly() returned false.")
+                        lockMessage = "NDEF makeReadOnly returned false."
+                    } else {
+                        Log.e(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Generic makeReadOnly() operation timed out.")
+                        lockMessage = "NDEF makeReadOnly timed out."
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG_NFC_PLUGIN, "performLockOperation: NDEF: Exception: ${e.message}", e)
+                    lockMessage = "NDEF lock attempt failed: ${e.message}"
+                } finally {
+                    if (ndefConnected && ndef.isConnected) {
+                        try { ndef.close() } catch (e: IOException) { Log.e(TAG_NFC_PLUGIN, "Ndef.close error",e)}
+                    }
+                }
+            } else {
+                 Log.d(TAG_NFC_PLUGIN, "performLockOperation: NDEF not supported by this tag.")
+            }
+
+            // --- NTAG Locking Attempt (if NDEF failed or wasn't applicable) ---
+            if (!ndefLockSuccess) {
+                val nfcA = NfcA.get(tagToLock)
+                if (nfcA != null) {
+                    Log.d(TAG_NFC_PLUGIN, "performLockOperation: NfcA branch started (fallback or primary if no NDEF).")
+                    var nfcAConnected = false
+                    try {
+                        val ntagLockTransceiveResult: ByteArray? = withTimeoutOrNull(7000) {
+                            nfcA.connect()
+                            nfcAConnected = true
+                            val lockCmd = byteArrayOf(0xA2.toByte(), 0x02.toByte(), 0x00.toByte(), 0x00.toByte(), 0xFF.toByte(), 0xFF.toByte()) // Example
+                            nfcA.transceive(lockCmd)
+                        }
+                        if (ntagLockTransceiveResult != null && ntagLockTransceiveResult.isNotEmpty() && ntagLockTransceiveResult[0] == 0x0A.toByte()) {
+                            Log.d(TAG_NFC_PLUGIN, "performLockOperation: NfcA: NTAG locking successful.")
+                            ntagLockSuccess = true
+                            lockMessage = "Tag locked successfully via NTAG-specific command."
+                        } else {
+                            val responseHex = ntagLockTransceiveResult?.toHexString() ?: "TIMEOUT"
+                            Log.e(TAG_NFC_PLUGIN, "performLockOperation: NfcA: Failed to lock NTAG. Response: $responseHex")
+                            if (lockMessage.contains("failed") || lockMessage.contains("timed out")) { // Append if NDEF also failed
+                                lockMessage += " | NTAG lock attempt failed (Response: $responseHex)."
+                            } else {
+                                lockMessage = "NTAG lock attempt failed (Response: $responseHex)."
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG_NFC_PLUGIN, "performLockOperation: NfcA: Exception: ${e.message}", e)
+                         if (lockMessage.contains("failed") || lockMessage.contains("timed out")) {
+                             lockMessage += " | NTAG lock attempt failed: ${e.message}."
+                         } else {
+                            lockMessage = "NTAG lock attempt failed: ${e.message}."
+                         }
+                    } finally {
+                        if (nfcAConnected && nfcA.isConnected) {
+                            try { nfcA.close() } catch (e: IOException) { Log.e(TAG_NFC_PLUGIN, "NfcA.close error",e)}
+                        }
+                    }
+                } else if (ndef == null) { // Only note NTAG not supported if NDEF also wasn't
+                     Log.d(TAG_NFC_PLUGIN, "performLockOperation: NfcA not supported by this tag.")
+                     if (lockMessage.contains("failed") || lockMessage.contains("timed out") || ndef == null) {
+                        lockMessage += " | NTAG technology not available."
+                     } else {
+                        lockMessage = "NTAG technology not available."
+                     }
+                }
+            }
+
+            // --- Resolve the original call ---
+            val finalResult = JSObject()
+            finalResult.put("readData", readData) // Include the original read data
+            finalResult.put("locked", ndefLockSuccess || ntagLockSuccess)
+            finalResult.put("lockMessage", lockMessage)
+            
+            if (ndefLockSuccess || ntagLockSuccess) {
+                originalCall.resolve(finalResult)
+            } else {
+                // Consider if this should be a reject or a resolve with locked:false
+                // For a "read and lock" operation, resolving with status is often preferred over rejecting
+                // unless a fundamental error occurred preventing even a read.
+                Log.w(TAG_NFC_PLUGIN, "performLockOperation: Failed to lock tag. Details: $lockMessage")
+                originalCall.resolve(finalResult) // Resolving with locked: false
+                // originalCall.reject(lockMessage, null, finalResult) // Alternative: reject on failure
+            }
+        }
+    }
+
+
+    // Method for writing data and then making it read-only (potentially using NdefFormatable)
+    @PluginMethod
+    fun writeAndLockTag(intent: Intent, call: PluginCall) {
+        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        if (tag != null) {
+            pendingTag = tag
+        }
+        val tagFromPending = pendingTag // Or get tag via a new discovery flow
+        val dataToEncode = call.getString("data") // Example: get data to write from JS call
+
+        //val dataToEncode = "WETAXI_LOCK" //Test value string
+
+        if (tagFromPending == null) {
+            call.reject("No tag available.")
+            return
+        }
+        if (dataToEncode == null) {
+            call.reject("No data provided to write.")
+            return
+        }
+
+        // Construct your NdefMessage from dataToEncode
+        // This is a simplified example; you'll need robust NdefMessage creation
+        val ndefRecord = android.nfc.NdefRecord.createTextRecord("en", dataToEncode)
+        val ndefMessageToWrite = NdefMessage(arrayOf(ndefRecord))
+
+        pluginScope.launch {
+            var success = false
+            var message = "Write and lock operation initiated."
+
+            // Try NdefFormatable first - for blank or newly formatted tags
+            val ndefFormatable = NdefFormatable.get(tagFromPending)
+            if (ndefFormatable != null) {
+                Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: Tag is NdefFormatable. Attempting formatReadOnly.")
+                try {
+                    kotlinx.coroutines.withTimeoutOrNull(10000) { // More generous timeout for format + write + lock
+                        Log.d(TAG_NFC_PLUGIN, "NdefFormatable: Connecting...")
+                        ndefFormatable.connect()
+                        Log.d(TAG_NFC_PLUGIN, "NdefFormatable: Calling formatReadOnly().")
+                        ndefFormatable.formatReadOnly(ndefMessageToWrite)
+                        Log.d(TAG_NFC_PLUGIN, "NdefFormatable: formatReadOnly() successful.")
+                        success = true
+                        message = "Tag formatted, data written, and locked successfully via NdefFormatable."
+                    }
+                    if (!success && !message.contains("successful")) { // Timeout occurred
+                        message = "NdefFormatable.formatReadOnly() timed out."
+                        Log.e(TAG_NFC_PLUGIN, message)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG_NFC_PLUGIN, "writeAndLockTag: NdefFormatable.formatReadOnly() failed: ${e.message}", e)
+                    message = "NdefFormatable.formatReadOnly() error: ${e.message}"
+                } finally {
+                    if (ndefFormatable.isConnected) {
+                        try { ndefFormatable.close() } catch (e: IOException) { /* ignore */ }
+                    }
+                }
+            }
+
+            // If NdefFormatable failed or wasn't available, try Ndef (for already formatted tags)
+            if (!success) {
+                Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: NdefFormatable failed or not available. Falling back to Ndef write then makeReadOnly.")
+                val ndef = Ndef.get(tagFromPending)
+                if (ndef != null) {
+                    var ndefConnected = false
+                    try {
+                        kotlinx.coroutines.withTimeoutOrNull(10000) {
+                            Log.d(TAG_NFC_PLUGIN, "Ndef: Connecting for write/lock...")
+                            ndef.connect()
+                            ndefConnected = true
+                            Log.d(TAG_NFC_PLUGIN, "Ndef: Connected. isWritable: ${ndef.isWritable}")
+                            if (!ndef.isWritable) {
+                                throw IOException("Tag is not writable (Ndef)")
+                            }
+                            Log.d(TAG_NFC_PLUGIN, "Ndef: Writing NdefMessage...")
+                            ndef.writeNdefMessage(ndefMessageToWrite)
+                            Log.d(TAG_NFC_PLUGIN, "Ndef: Message written. Attempting makeReadOnly...")
+                            if (!ndef.canMakeReadOnly()) {
+                                Log.w(TAG_NFC_PLUGIN, "Ndef: Tag reports it cannot be made read-only, but attempting anyway.")
+                            }
+                            ndef.makeReadOnly() // This is the call that hangs for you
+                            Log.d(TAG_NFC_PLUGIN, "Ndef: makeReadOnly() successful.")
+                            success = true
+                            message = "Data written and tag locked successfully via Ndef."
+                        }
+                        if (!success && !message.contains("successful") && message.contains("initiated")) { // Timeout occurred
+                            message = "Ndef write/makeReadOnly operation timed out."
+                            Log.e(TAG_NFC_PLUGIN, message)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG_NFC_PLUGIN, "writeAndLockTag: Ndef write/makeReadOnly failed: ${e.message}", e)
+                        // Append to previous message if NdefFormatable also tried
+                        if (message.contains("NdefFormatable")) {
+                            message += " | Ndef write/lock error: ${e.message}"
+                        } else {
+                            message = "Ndef write/lock error: ${e.message}"
+                        }
+                    } finally {
+                        if (ndefConnected && ndef.isConnected) {
+                            try { ndef.close() } catch (e: IOException) { /* ignore */ }
+                        }
+                    }
+                } else if (ndefFormatable == null) { // Neither NdefFormatable nor Ndef
+                    message = "Tag is neither NdefFormatable nor Ndef. Cannot write and lock."
+                    Log.e(TAG_NFC_PLUGIN, message)
+                }
+            }
+
+            // Fallback to NTAG specific commands if everything above failed (optional)
+            if (!success && (NfcA.get(tagFromPending) != null)) {
+                Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: NDEF/NdefFormatable lock failed. Attempting NTAG specific lock (if applicable, though write didn't happen here).")
+                // ... (your NTAG specific locking logic, though the write part is now separate)
+                // Note: NTAG lock here won't have written the ndefMessageToWrite unless you add that logic to the NTAG section.
+            }
+
+
+            if (success) {
+                call.resolve(JSObject().put("success", true).put("message", message))
+            } else {
+                call.reject(message)
+            }
+        }
+    }
+
 
     private fun byteArrayToHexString(inarray: ByteArray): String {
         val hex = arrayOf("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F")

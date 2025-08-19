@@ -1,7 +1,7 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
 // Payload from a new NFC scan is a base64 encoded string
-export type PayloadType = string | number[] | Uint8Array
+export type PayloadType = string | number[] | Uint8Array;
 
 export interface NFCPluginBasic {
   /**
@@ -28,6 +28,16 @@ export interface NFCPluginBasic {
   lockTag(): Promise<void>;
 
   /**
+   * Set to auto lock mode
+   */
+  setReadAndLockMode(data: { enabled: boolean }): Promise<any>;
+
+  /**
+   * Executed the saved plugin call message
+   */
+  startNfcOperation(): Promise<any>;
+
+  /**
    * Adds a listener for NFC tag detection events.
    * @param eventName The name of the event ('nfcTag').
    * @param listenerFunc The function to call when an NFC tag is detected.
@@ -44,7 +54,7 @@ export interface NFCPluginBasic {
    */
   addListener(
     eventName: 'nfcWriteSuccess',
-    listenerFunc: ()=> void,
+    listenerFunc: () => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
 
   /**
@@ -84,7 +94,6 @@ export interface NDEFRecord<T extends PayloadType = string> {
   payload: T;
 }
 
-
 export interface NFCError {
   /**
    * The error message.
@@ -97,19 +106,21 @@ export interface NDEFWriteOptions<T extends PayloadType = Uint8Array> {
 }
 
 export type NDEFMessagesTransformable = {
-  base64: ()=> NDEFMessages;
-  uint8Array: ()=> NDEFMessages<Uint8Array>;
-  string: ()=> NDEFMessages;
-  numberArray: ()=> NDEFMessages<number[]>;
-}
+  base64: () => NDEFMessages;
+  uint8Array: () => NDEFMessages<Uint8Array>;
+  string: () => NDEFMessages;
+  numberArray: () => NDEFMessages<number[]>;
+};
 
-export type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void
+export type TagResultListenerFunc = (data: NDEFMessagesTransformable) => void;
 
-export interface NFCPlugin extends Omit<NFCPluginBasic, "writeNDEF" | "lockTag" | "addListener"> {
+export interface NFCPlugin extends Omit<NFCPluginBasic, 'writeNDEF' | 'lockTag' | 'addListener'> {
   writeNDEF: <T extends PayloadType = Uint8Array>(record?: NDEFWriteOptions<T>) => Promise<void>;
-  wrapperListeners: TagResultListenerFunc[],
-  onRead: (listenerFunc: TagResultListenerFunc)=> void,
-  onWrite: (listenerFunc: ()=> void) => void,
-  onError: (listenerFunc: (error: NFCError)=> void)=> void,
-  lockTag: () => Promise<void>,
+  wrapperListeners: TagResultListenerFunc[];
+  onRead: (listenerFunc: TagResultListenerFunc) => void;
+  onWrite: (listenerFunc: () => void) => void;
+  onError: (listenerFunc: (error: NFCError) => void) => void;
+  lockTag: () => Promise<void>;
+  setReadAndLockMode: (data: { enabled: boolean }) => Promise<any>;
+  startNfcOperation: () => Promise<any>;
 }

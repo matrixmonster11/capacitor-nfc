@@ -11,5 +11,7 @@ export declare class NFCWeb extends WebPlugin implements NFCPlugin {
     onRead(_func: TagResultListenerFunc): Promise<void>;
     onWrite(): Promise<void>;
     lockTag(): Promise<void>;
+    setReadAndLockMode(): Promise<void>;
+    startNfcOperation(): Promise<void>;
     onError(_errorFn: (error: any) => void): Promise<void>;
 }

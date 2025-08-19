@@ -4,7 +4,7 @@ import type { NFCPlugin, TagResultListenerFunc } from './definitions';
 
 export class NFCWeb extends WebPlugin implements NFCPlugin {
   wrapperListeners = [];
-  
+
   isSupported(): Promise<{ supported: boolean }> {
     return Promise.resolve({ supported: false });
   }
@@ -20,7 +20,7 @@ export class NFCWeb extends WebPlugin implements NFCPlugin {
   writeNDEF(): Promise<void> {
     return Promise.reject(new Error('NFC is not supported on web'));
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onRead(_func: TagResultListenerFunc): Promise<void> {
     return Promise.reject(new Error('NFC is not supported on web'));
@@ -31,6 +31,14 @@ export class NFCWeb extends WebPlugin implements NFCPlugin {
   }
 
   lockTag(): Promise<void> {
+    return Promise.reject(new Error('NFC is not supported on web'));
+  }
+
+  setReadAndLockMode(): Promise<void> {
+    return Promise.reject(new Error('NFC is not supported on web'));
+  }
+
+  startNfcOperation(): Promise<void> {
     return Promise.reject(new Error('NFC is not supported on web'));
   }
 

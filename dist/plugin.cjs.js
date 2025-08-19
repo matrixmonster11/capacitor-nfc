@@ -5,7 +5,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var core = require('@capacitor/core');
 
 const NFCPlug = core.registerPlugin('NFC', {
-    web: () => Promise.resolve().then(function () { return web; }).then(m => new m.NFCWeb()),
+    web: () => Promise.resolve().then(function () { return web; }).then((m) => new m.NFCWeb()),
 });
 const NFC = {
     isSupported: NFCPlug.isSupported.bind(NFCPlug),
@@ -22,6 +22,12 @@ const NFC = {
     },
     lockTag: () => {
         return NFCPlug.lockTag();
+    },
+    setReadAndLockMode: (data) => {
+        return NFCPlug.setReadAndLockMode(data);
+    },
+    startNfcOperation: () => {
+        return NFCPlug.startNfcOperation();
     },
     wrapperListeners: [],
     async writeNDEF(options) {
@@ -53,36 +59,36 @@ const decodeBase64 = (base64Payload) => {
 };
 const mapPayloadTo = (type, data) => {
     return {
-        messages: data.messages.map(message => ({
-            records: message.records.map(record => ({
+        messages: data.messages.map((message) => ({
+            records: message.records.map((record) => ({
                 type: record.type,
-                payload: type === "b64"
+                payload: type === 'b64'
                     ? record.payload
-                    : type === "string"
+                    : type === 'string'
                         ? decodeBase64(record.payload)
-                        : type === "uint8Array"
+                        : type === 'uint8Array'
                             ? new Uint8Array(decodeBase64(record.payload))
-                            : type === "numberArray"
+                            : type === 'numberArray'
                                 ? Array.from(decodeBase64(record.payload))
-                                : record.payload
-            }))
-        }))
+                                : record.payload,
+            })),
+        })),
     };
 };
 NFCPlug.addListener(`nfcTag`, (data) => {
     const wrappedData = {
         base64() {
-            return mapPayloadTo("b64", data);
+            return mapPayloadTo('b64', data);
         },
         string() {
-            return mapPayloadTo("string", data);
+            return mapPayloadTo('string', data);
         },
         uint8Array() {
-            return mapPayloadTo("uint8Array", data);
+            return mapPayloadTo('uint8Array', data);
         },
         numberArray() {
-            return mapPayloadTo("numberArray", data);
-        }
+            return mapPayloadTo('numberArray', data);
+        },
     };
     for (const listener of NFC.wrapperListeners) {
         listener(wrappedData);
@@ -114,6 +120,12 @@ class NFCWeb extends core.WebPlugin {
         return Promise.reject(new Error('NFC is not supported on web'));
     }
     lockTag() {
+        return Promise.reject(new Error('NFC is not supported on web'));
+    }
+    setReadAndLockMode() {
+        return Promise.reject(new Error('NFC is not supported on web'));
+    }
+    startNfcOperation() {
         return Promise.reject(new Error('NFC is not supported on web'));
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

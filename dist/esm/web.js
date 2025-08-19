@@ -26,6 +26,12 @@ export class NFCWeb extends WebPlugin {
     lockTag() {
         return Promise.reject(new Error('NFC is not supported on web'));
     }
+    setReadAndLockMode() {
+        return Promise.reject(new Error('NFC is not supported on web'));
+    }
+    startNfcOperation() {
+        return Promise.reject(new Error('NFC is not supported on web'));
+    }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onError(_errorFn) {
         return Promise.reject(new Error('NFC is not supported on web'));
