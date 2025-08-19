@@ -61,6 +61,9 @@ class NFCPlugin : Plugin() {
         Log.d(TAG_NFC_PLUGIN, "setReadAndLockMode: autoLockOnNextReadEnabled set to $autoLockOnNextReadEnabled")
         val dataString = call.getString("data") // Get the data
         this.dataForAutoLock = dataString
+        if(!enabled){
+           currentNfcOperationCall = null;
+        }
         Log.d(TAG_NFC_PLUGIN, "setReadAndLockMode: dataForAutoLock set to $dataForAutoLock")
         call.resolve(JSObject().put("success", true).put("modeSet", enabled))
     }
@@ -311,8 +314,6 @@ class NFCPlugin : Plugin() {
         else if (ACTION_NDEF_DISCOVERED == intent.action || ACTION_TAG_DISCOVERED == intent.action) {
             Log.d("NFC", "READ MODE START")
             writeAndLockTag(intent, call)
-
-
         }
     }
 
@@ -731,7 +732,7 @@ class NFCPlugin : Plugin() {
         }
         val tagFromPending = pendingTag // Or get tag via a new discovery flow
 
-        Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: dataToEncode ${this.dataForAutoLock}")
+        Log.d(TAG_NFC_PLUGIN, "writeAndLockTag: dataForAutoLock ${this.dataForAutoLock}")
         val dataToEncode = this.dataForAutoLock // Example: get data to write from JS call
 
         //val dataToEncode = "WETAXI_LOCK" //Test value string
