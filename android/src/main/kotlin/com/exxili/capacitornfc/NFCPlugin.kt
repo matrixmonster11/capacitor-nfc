@@ -75,6 +75,10 @@ class NFCPlugin : Plugin() {
     @PluginMethod
     fun startNfcOperation(call: PluginCall) {
         Log.d(TAG_NFC_PLUGIN, "startNfcOperation: Called. autoLockOnNextRead is $autoLockOnNextReadEnabled. Waiting for tag...")
+        if(!autoLockOnNextReadEnabled){
+          currentNfcOperationCall = null;
+          return;
+        }
         if (currentNfcOperationCall != null) {
             // Handle cases where a previous operation might not have completed
             // Or if you only allow one operation at a time.
@@ -592,15 +596,15 @@ class NFCPlugin : Plugin() {
             }
         }
 
-            jsResponse.put("messages", ndefMessages)
+        jsResponse.put("messages", ndefMessages)
             // --- End of your existing read logic ---
 
 
-            Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is FALSE. Resolving with read data only.")
+        Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is FALSE. Resolving with read data only.")
             // this.notifyListeners("nfcTag", jsReadResponse) // If you still want the old event
             //originalCall.resolve(jsReadResponse) // Resolve the PluginCall with just the read data
         
-            this.notifyListeners("nfcTag", jsResponse)
+        notifyListeners("nfcTag", jsResponse)
     }
 
     private fun performLockOperation(tagToLock: Tag, readData: JSObject, originalCall: PluginCall) {
