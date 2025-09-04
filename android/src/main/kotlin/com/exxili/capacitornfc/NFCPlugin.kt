@@ -309,13 +309,14 @@ class NFCPlugin : Plugin() {
         }
         currentNfcOperationCall = null // Consume the call so it's not used again for this intent
 
-        if (writeMode) {
-            Log.d("NFC", "WRITE MODE START")
-            handleWriteTag(intent)
-            writeMode = false
-            recordsBuffer = null
-        }
-        else if (ACTION_NDEF_DISCOVERED == intent.action || ACTION_TAG_DISCOVERED == intent.action) {
+        // if (writeMode) {
+        //     Log.d("NFC", "WRITE MODE START")
+        //     handleWriteTag(intent)
+        //     writeMode = false
+        //     recordsBuffer = null
+        // }
+        // else
+         if (ACTION_NDEF_DISCOVERED == intent.action || ACTION_TAG_DISCOVERED == intent.action) {
             Log.d("NFC", "READ MODE START")
             writeAndLockTag(intent, call)
         }
@@ -584,22 +585,31 @@ class NFCPlugin : Plugin() {
                 val result = if (tagId != null) byteArrayToHexString(tagId) else ""
                 Log.d(TAG_NFC_PLUGIN, "processNfcIntent: Tag ID: $result")
                 val rec = JSObject()
-                jsResponse.put("type", "ID")
-                jsResponse.put("payload", result)
+                val messageObject = JSObject() // Object representing one NDEF message
+                messageObject.put("type", "ID")
+                messageObject.put("payload", result)
 
                 val ndefRecords = JSArray()
-                ndefRecords.put(jsResponse)
+                ndefRecords.put(messageObject)
 
                 val msg = JSObject()
                 msg.put("records", ndefRecords)
                 ndefMessages.put(msg)
             }
         }
+        // Now, assemble the final jsResponse object
+        // It should contain general info, and the 'messages' array.
+        // If you want to include the raw tagId at the top level of jsResponse as well, that's fine:
+        val discoveredTag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        val rawTagIdBytes : ByteArray? = discoveredTag?.id
+        if (rawTagIdBytes != null) {
+            jsResponse.put("tagId", byteArrayToHexString(rawTagIdBytes))
+        }
 
         jsResponse.put("messages", ndefMessages)
-            // --- End of your existing read logic ---
+        // --- End of your existing read logic ---
 
-
+        Log.d(TAG_NFC_PLUGIN, "handleReadTag: Sending jsResponse: ${jsResponse.toString()}")
         Log.d(TAG_NFC_PLUGIN, "processNfcIntent: autoLockOnNextReadEnabled is FALSE. Resolving with read data only.")
             // this.notifyListeners("nfcTag", jsReadResponse) // If you still want the old event
             //originalCall.resolve(jsReadResponse) // Resolve the PluginCall with just the read data
